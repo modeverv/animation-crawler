@@ -171,7 +171,7 @@ class Crawler
             command = "curl -# -L -R -o '#{path}' '#{url}'"
             puts command
             system command
-            var[:path] = path
+            val[:path] = path
           rescue => ex
             p ex
           end
