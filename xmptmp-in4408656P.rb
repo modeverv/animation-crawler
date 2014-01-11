@@ -1,13 +1,11 @@
-require 'pp'
-require './uri.rb'
-# uriモジュールは|を許容するように変更している
 require 'eventmachine'
 require 'em-http'
 require 'nokogiri'
 require 'open-uri'
 require 'httpclient'
 require 'mechanize'
-require 'net/http'
+#require 'net/http'
+#require 'uri'
 
 class Crawler
   DOWNLOADDIR = "/var/smb/sdd1/video"
@@ -21,24 +19,23 @@ class Crawler
   JOB_ANISOKUTOP     = 'アニ速TOP'
   JOB_KOUSINPAGE     = '更新ページ'
   JOB_KOBETUPAGE     = '個別ページ'
+  JOB_SAYMOVESEARCH  = 'saymove検索ページ'
+  JOB_SAYMOVEVIDEO   = "saymoveビデオページ"
   JOB_NOSUBSEARCH    = "nosub検索ページ"
   JOB_NOSUBVIDEO     = "nosubビデオページ"
   JOB_CONVERT        = "flv2mp4"
-
-  # constructor
-  # hash[ffmpeg] convert or not
-  def initialize hash
+  
+  def initialize
     @queue = []
     @queue.push({ kind: JOB_ANISOKUTOP, value: START_URL })
     @fetching = 0
     @reachtoend = false
-    @ffmpeg = hash[:ffmpeg] || false
+    
   end
 
   def run
     EM.run do
       EM.add_periodic_timer(WATCH_INTERVAL) do
-       
         diff = CONCURRENCY - @fetching
         puts 'diff:' +  diff.to_s
 
@@ -49,12 +46,11 @@ class Crawler
             break
           end
 
+          p job
           process job
         end
         
         if @reachtoend && @fetching == 0
-          puts 'diff:' +  diff.to_s
-          puts "reachtoend:#{@reachtoend.to_s} / fetching:#{@fetching}"
           puts "finish"
           EM::stop_event_loop
         else
@@ -65,7 +61,6 @@ class Crawler
   end
 
   def process job
-    puts "fetch +=1 #{job.inspect}"
     @fetching += 1
     case job[:kind]
     when JOB_ANISOKUTOP
@@ -75,6 +70,10 @@ class Crawler
       anisokukousin job[:value]
     when JOB_KOBETUPAGE
       anisokukobetu job[:value]
+    when JOB_SAYMOVESEARCH
+      saymovesearch job[:value]
+    when JOB_SAYMOVEVIDEO
+      saymovevideo job[:value]
     when JOB_NOSUBSEARCH
       nosubsearch job[:value]
     when JOB_NOSUBVIDEO
@@ -125,6 +124,7 @@ class Crawler
 
   # anisoku kobetu
   def anisokukobetu value
+    p value
     req = EM::HttpRequest.new(value[:href]).get
 
     req.callback do
@@ -132,6 +132,9 @@ class Crawler
       page.css("a").each { |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
+        # http://say-move.org/comesearch.php?q=%E3%81%9D%E3%81%AB%E3%82%A2%E3%83%8B&sort=toukoudate&genre=&sitei=&mode=&p=1
+        # http://www.nosub.tv/?s=%E3%81%9D%E3%81%AB%E3%82%A2%E3%83%8B
+        #if href =~ /^http:\/\/say-move\.org\/comesearch.php/
         if href =~ /^http:\/\/www.nosub\.tv\/\?s=/
           puts value[:title] + "-" + href
           @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
@@ -141,7 +144,63 @@ class Crawler
     end    
   end
 
+  # saymove search
+  def saymovesearch value
+    p value
+    req = EM::HttpRequest.new(value[:href]).get
+
+    req.callback do
+      page = Nokogiri::HTML(req.response)
+      urls = []
+      page.css(".movtitle a").each { |a|
+        href = ""
+        href = a.attributes["href"].value unless a.attributes["href"].nil?
+        p a.children[0].to_s
+        episode = a.children[0].to_s.gsub(" ","").gsub("/","").gsub("　","").gsub("#","")
+        puts value[:title] + "-" + episode + "-" + href
+        urls << {title: value[:title] ,episode: episode, href: href }
+      }
+      @queue.push({kind: JOB_SAYMOVEVIDEO, value: urls })
+      
+      @fetching -= 1
+    end    
+  end
+
+  # saymove video
+  def saymovevideo value
+    puts "saymovevideo" + value.inspect
+    value.each do |val|
+      @fetching += 1
+      http200 = false
+      req = EM::HttpRequest.new(val[:href]).get
+
+      req.callback do       
+        page = Nokogiri::HTML(req.response)
+        page.css(".box02 input").each {|input|
+          url = input.attribute("value")
+          puts url
+          path = mkfilepath val[:title],val[:episode]
+          if File.exists? path
+            next
+          end
+          begin
+            command = "curl -# -L -R -o '#{path}' '#{url}'"
+            puts command
+            system command
+            val[:path] = path
+          rescue => ex
+            p ex
+          end
+          
+        }
+        @fetching -= 1
+      end
+    end
+    @fetching -= 1
+  end
+
   def nosubsearch value
+    p value
     urls = []
     
     req = EM::HttpRequest.new(value[:href]).get
@@ -163,15 +222,15 @@ class Crawler
   end
   
   def nosubvideo value
+    
+    p value
     urls = []
     fetched = false
     value.each { |val|
       path = mkfilepath val[:title],val[:episode]
       
-      if File.exists?(path) || File.exists?(path + ".mp4")
+      if File.exists? path
         fetched = true
-        @fetching -= 1
-        return 
       end
       
       break if fetched
@@ -213,11 +272,7 @@ class Crawler
                   else
                     false
                   end
-            checkurl = checkvideourl url if url
-            if checkurl
-              downloadvideo url , path if url
-              fetched = true
-            end
+            fetched = downloadvideo url , path if url
             break if fetched
           }
         }
@@ -227,82 +282,20 @@ class Crawler
     @fetching -= 1
   end
   
-  def checkvideourl url 
-    check = false
-    puts "checkvideo url: #{url}"
-    begin
-      puts URI::VERSION
-      http  = Net::HTTP.new(URI.parse(url).host)
-      res = http.request_head(URI.parse(url))
-      if res['location']
-        return checkvideourl res['location']
-      else
-        if res['content-length'].to_i > 1000
-          check = url
-        else
-          check = false
-        end
-      end
-    rescue => ex
-      puts ex.inspect + " url:#{url}"
-      check = false
-    end
-    puts "checkvideo url: #{url} check: #{check.to_s}"
-    return check
-  end
-  
   def downloadvideo url , path
-    if File.exists?(path) || File.exists?(path + ".mp4")
-      return 
-    end
-    
     puts "download: #{url} - #{path}"
-    puts "reachtoend:#{@reachtoend.to_s} / fetching:#{@fetching}"
     fetched = false
     begin
       
-      command = "touch '#{path}'"
-      system command
+      #AGENT.pluggable_parser.default = Mechanize::Download
+      #AGENT.get(url).save("#{path}")
       
-      @fetching += 1
-
-      file = open(path, "w+b")
-      http = EM::HttpRequest.new(url).get :redirects => 3
+      #command = "curl -# -L -R -o '#{path}' '#{url}'"
+      #puts command
+      #system command
       
-      http.errback {
-        p 'download error';
-        file.close;
-        @fetching -= 1
-        command = "rm -f '#{path}'"
-        system command
-      }
-      
-      http.callback {
-        file.close
-        unless http.response_header.status == 200
-          puts "failed with response code #{http.response_header.status}"
-        end
-        @fetching -= 1
-        @queue.push({kind: JOB_CONVERT,value: path}) if @ffmpeg
-        fetched = true
-      }
-
-      http.headers do |hash|
-        p [:headers, hash]
-      end
-      
-      http.stream do |chunk|
-        puts "#{File.basename path} : #{chunk.length}"
-        file.write chunk
-      end
-
-      # AGENT.pluggable_parser.default = Mechanize::Download
-      # AGENT.get(url).save(path)
-      
-      # command = "curl -L -R -o '#{path}' #{url}"
-      # system command 
-      # @fetching -= 1
-     
+      @queue.push({kind: JOB_CONVERT,value: path})
+      fetched = true
     rescue => ex
       p ex
       fetched = false
@@ -313,13 +306,14 @@ class Crawler
 
   # convert
   def convert value
-    command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k -ac 2 -ar 44100 -ab 128k -strict experimental '#{value}.mp4'"
+    command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k -acodec libfaac -ac 2 -ar 44100 -ab 128k '#{value}.mp4'"
     puts command
-    system command
+    #system command
     command = "rm -f '#{value}'"
-    system command
+    puts command
+    #system command
   end
-
+  
   def mkfilepath title,episode
     mkdirectory title
     DOWNLOADDIR + "/" + title + "/" + episode + ".flv"
@@ -334,5 +328,4 @@ class Crawler
   
 end
 
-# 高速なサーバーならmp4に変換しておくほうがよいでしょう
-Crawler.new(ffmpeg: false).run
+Crawler.new.run
