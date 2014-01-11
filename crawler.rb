@@ -15,8 +15,9 @@ class Crawler
   START_URL = 'http://youtubeanisoku1.blog106.fc2.com/'
   AGENT  = Mechanize.new
   
-  CONCURRENCY = 64
+  CONCURRENCY = 128
   WATCH_INTERVAL = 1
+  MEGA = (1024 * 1024).to_f
 
   JOB_ANISOKUTOP     = 'アニ速TOP'
   JOB_KOUSINPAGE     = '更新ページ'
@@ -26,50 +27,54 @@ class Crawler
   JOB_CONVERT        = "flv2mp4"
 
   # constructor
-  # hash[ffmpeg] convert or not
+  # hash[:ffmpeg] convert or not
+  # hash[:debug] debug or not
   def initialize hash
     @queue = []
     @queue.push({ kind: JOB_ANISOKUTOP, value: START_URL })
     @fetching = 0
-    @reachtoend = false
+    @downloads = {}
     @ffmpeg = hash[:ffmpeg] || false
+    @debug  = hash[:debug] || false
+    @usecurl= hash[:usecurl]|| false
+    @gaman  = 20
   end
-
+  
   def run
     EM.run do
       EM.add_periodic_timer(WATCH_INTERVAL) do
        
         diff = CONCURRENCY - @fetching
-        puts 'diff:' +  diff.to_s
 
         diff.times do
           job = @queue.pop
           unless job 
-            @reachtoend = true
             break
           end
 
           process job
         end
         
-        if @reachtoend && @fetching == 0
-          puts 'diff:' +  diff.to_s
-          puts "reachtoend:#{@reachtoend.to_s} / fetching:#{@fetching}"
-          puts "finish"
-          EM::stop_event_loop
+        if @fetching == 0
+          @gaman -= 1
+          puts "fetching:#{@fetching} gaman:#{@gaman}"
+          if @gaman == 0
+            puts "finish"
+            pp @downloads          
+            EM::stop_event_loop
+          end
         else
-          puts "reachtoend:#{@reachtoend.to_s} / fetching:#{@fetching}"
+          puts "fetching:#{@fetching}"
+          pp @downloads 
         end
       end
     end    
   end
 
   def process job
-    puts "fetch +=1 #{job.inspect}"
     @fetching += 1
     case job[:kind]
     when JOB_ANISOKUTOP
-      puts JOB_ANISOKUTOP
       anisokutop job[:value]
     when JOB_KOUSINPAGE
       anisokukousin job[:value]
@@ -86,7 +91,9 @@ class Crawler
 
   # anisoku top
   def anisokutop url
-    req = EM::HttpRequest.new(url).get
+    req = EM::HttpRequest.new(url,:connect_timeout => 50).get
+
+    req.errback { @fetching -= 1 }
 
     req.callback do
       page = Nokogiri::HTML(req.response)
@@ -101,8 +108,10 @@ class Crawler
 
   # anisoku kousin
   def anisokukousin url
-    req = EM::HttpRequest.new(url).get
+    req = EM::HttpRequest.new(url,:connect_timeout => 50).get
 
+    req.errback { @fetching -= 1 }
+    
     req.callback do
       page = Nokogiri::HTML(req.response)
       page.css(".article ul li a").each { |a|
@@ -113,7 +122,7 @@ class Crawler
             title = a.attributes["title"].value
           end
           if title
-            puts title + "-" + href
+            puts title + "-" + href if @debug
             title = title.gsub(" ","",).gsub("/","").gsub("-","")
             @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
           end
@@ -125,7 +134,9 @@ class Crawler
 
   # anisoku kobetu
   def anisokukobetu value
-    req = EM::HttpRequest.new(value[:href]).get
+    req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
+
+    req.errback { @fetching -= 1 }
 
     req.callback do
       page = Nokogiri::HTML(req.response)
@@ -133,7 +144,7 @@ class Crawler
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         if href =~ /^http:\/\/www.nosub\.tv\/\?s=/
-          puts value[:title] + "-" + href
+          puts value[:title] + "-" + href if @debug 
           @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
         end
       }
@@ -144,7 +155,9 @@ class Crawler
   def nosubsearch value
     urls = []
     
-    req = EM::HttpRequest.new(value[:href]).get
+    req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
+    
+    req.errback { @fetching -= 1 }
 
     req.callback do
       page = Nokogiri::HTML(req.response)
@@ -153,9 +166,11 @@ class Crawler
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
           .gsub(" ","").gsub("/","").gsub("　","").gsub("-","").gsub("#","")
-        puts value[:title] + "-" + episode + "-" + href
-        hash = {title: value[:title] ,episode: episode, href: href }
-        urls << hash
+        puts value[:title] + "-" + episode + "-" + href if @debug
+        unless episode =~ /アニメPV集/
+          hash = {title: value[:title] ,episode: episode, href: href }
+          urls << hash
+        end
       }
       @queue.push({kind: JOB_NOSUBVIDEO, value: urls })
       @fetching -= 1
@@ -165,6 +180,7 @@ class Crawler
   def nosubvideo value
     urls = []
     fetched = false
+
     value.each { |val|
       path = mkfilepath val[:title],val[:episode]
       
@@ -178,7 +194,9 @@ class Crawler
       
       @fetching += 1
       
-      req = EM::HttpRequest.new(val[:href]).get
+      req = EM::HttpRequest.new(val[:href],:connect_timeout => 50).get
+
+      req.errback { @fetching -= 1 }
 
       req.callback do
         page = Nokogiri::HTML(req.response)
@@ -198,14 +216,12 @@ class Crawler
                     open(u) {|res| x = res.read }
                     x
                   when "video"
-                    l =~ /file=(.*?)\\",/
-                    #"type=video&file=http://www.nosub.tv/wp-content/plugins/mukiopress/lianyue/?/url/XBCAVbX1ZVVVUGXB1RTEYVRl9JGF9VUAUDUVUAGRdBHFhEAA4LEgRLWRZWFgkLSlwRA1pFGzVaXQ0kVl5SAwYJGTAJDA0gC19UAA0IHAhFUQYt4F4CcB&cid=ZGXVIHBFVJBl0HBlEBBwMFDVQBAQtWAAIGUlNVCVEFAF1UAAtUUFEsg783C93","360p(40MB)","",1);
+                    l =~ /file=(.*?)&/
                     #http://www.nosub.tv/wp-content/plugins/mukiopress/lianyue/?/url/XBCAVbX1ZVVVUGXB1RTEYVRl9JGF9VUAUDUVUAGRdBHFhEAA4LEgRLWRZWFgkLSlwRA1pFGzVaXQ0kVl5SAwYJGTAJDA0gC19UAA0IHAhFUQYt4F4CcB
-                    u = "http://www.nosub.tv/wp-content/plugins/mukiopress/lianyue/?/url/#{$1}"
                     clnt = HTTPClient.new()
-                    res = clnt.get(u)
+                    res = clnt.get($1)
                     x = res.header['Location']
-                    x == [] ? false : x
+                    x == [] ? false : x[0]
                   when "youtube"
                     false
                   when "qq"
@@ -213,9 +229,11 @@ class Crawler
                   else
                     false
                   end
-            checkurl = checkvideourl url if url
-            if checkurl
-              downloadvideo url , path if url
+            
+            puts "#{url} - #{l}" if @debug
+            checksize = checkvideourl url if url
+            if checksize
+              downloadvideo url , path , checksize if url
               fetched = true
             end
             break if fetched
@@ -229,16 +247,15 @@ class Crawler
   
   def checkvideourl url 
     check = false
-    puts "checkvideo url: #{url}"
+    puts "checkvideo url: #{url}"  if @debug
     begin
-      puts URI::VERSION
       http  = Net::HTTP.new(URI.parse(url).host)
       res = http.request_head(URI.parse(url))
       if res['location']
         return checkvideourl res['location']
       else
         if res['content-length'].to_i > 1000
-          check = url
+          check = res['content-length'].to_i
         else
           check = false
         end
@@ -247,19 +264,31 @@ class Crawler
       puts ex.inspect + " url:#{url}"
       check = false
     end
-    puts "checkvideo url: #{url} check: #{check.to_s}"
+    puts "checkvideo url: #{url} check: #{check.to_s}"  if @debug
     return check
   end
   
-  def downloadvideo url , path
+  def downloadvideo url , path , size
+    downloaded = 0
+    
     if File.exists?(path) || File.exists?(path + ".mp4")
       return 
     end
     
-    puts "download: #{url} - #{path}"
-    puts "reachtoend:#{@reachtoend.to_s} / fetching:#{@fetching}"
+    puts "download start: #{url} - #{path}"
+    @downloads[path] = "start"
     fetched = false
     begin
+
+      if @usecurl
+        @fetching += 1
+        command = "curl -# -L -R -o '#{path}' '#{url}' &"
+        puts command 
+        system command 
+        @fetching -= 1
+        @downloads[path] = "complete"
+        return 
+      end
       
       command = "touch '#{path}'"
       system command
@@ -267,11 +296,13 @@ class Crawler
       @fetching += 1
 
       file = open(path, "w+b")
-      http = EM::HttpRequest.new(url).get :redirects => 3
+      http = EM::HttpRequest.new(url,:connect_timeout => 50)
+        .get({:redirects => 10,:head => {"accept-encoding" => "gzip, compressed"}})
       
-      http.errback {
-        p 'download error';
-        file.close;
+      http.errback {|client|
+        @downloads[path] = "error"
+        p "download error: #{path} #{client.inspect}";
+        file.close
         @fetching -= 1
         command = "rm -f '#{path}'"
         system command
@@ -282,6 +313,8 @@ class Crawler
         unless http.response_header.status == 200
           puts "failed with response code #{http.response_header.status}"
         end
+        @downloads[path] = "complete"
+        puts "download complete: #{path} "
         @fetching -= 1
         @queue.push({kind: JOB_CONVERT,value: path}) if @ffmpeg
         fetched = true
@@ -292,17 +325,16 @@ class Crawler
       end
       
       http.stream do |chunk|
-        puts "#{File.basename path} : #{chunk.length}"
+        downloaded += chunk.length
+        puts "#{File.basename path} : #{chunk.length}" if @debug
+        if size > 0
+          @downloads[path] = "download #{(downloaded/MEGA).round}M / #{(size.to_f/MEGA).round}M #{(downloaded.to_f / size.to_f * 100.0).round(2)}%"
+        end
         file.write chunk
       end
 
       # AGENT.pluggable_parser.default = Mechanize::Download
       # AGENT.get(url).save(path)
-      
-      # command = "curl -L -R -o '#{path}' #{url}"
-      # system command 
-      # @fetching -= 1
-     
     rescue => ex
       p ex
       fetched = false
@@ -335,4 +367,4 @@ class Crawler
 end
 
 # 高速なサーバーならmp4に変換しておくほうがよいでしょう
-Crawler.new(ffmpeg: false).run
+Crawler.new(ffmpeg: false,debug: false,usecurl: true).run
