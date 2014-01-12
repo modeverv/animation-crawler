@@ -39,6 +39,8 @@ class Crawler
     @debug  = hash[:debug] || false
     @usecurl= hash[:usecurl]|| false
     @gaman  = 20
+    @candidate = {}
+    @titles = {}
   end
   
   def run
@@ -145,8 +147,11 @@ class Crawler
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         if href =~ /http:\/\/www.nosub\.tv/
-          puts value[:title] + "-" + href if @debug 
-          @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
+          unless @titles[value[:title]]
+            puts value[:title] + "-" + href
+            @titles[value[:title]] = :pedinding
+            @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
+          end
         end
       }
       @fetching -= 1
@@ -190,6 +195,14 @@ class Crawler
         @fetching -= 1
         return 
       end
+      
+      if @candidate[path]
+        fetched = true
+        @fetching -= 1
+        return
+      end
+
+      @candidate[path] = :pending
       
       break if fetched
       
