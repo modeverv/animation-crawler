@@ -124,7 +124,7 @@ class Crawler
           end
           if title
             puts title + "-" + href if @debug
-            title = title.gsub(" ","",).gsub("/","").gsub("-","")
+            title = title.gsub(" ","",).gsub("/","").gsub("#","")
             @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
           end
         end
@@ -166,7 +166,7 @@ class Crawler
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
-          .gsub(" ","").gsub("/","").gsub("　","").gsub("-","").gsub("#","")
+          .gsub(" ","").gsub("/","").gsub("　","").gsub("#","")
         puts value[:title] + "-" + episode + "-" + href if @debug
         unless episode =~ /アニメPV集/
           hash = {title: value[:title] ,episode: episode, href: href }
@@ -283,7 +283,11 @@ class Crawler
 
       if @usecurl
         @fetching += 1
-        command = "curl -# -L -R -o '#{path}' '#{url}' &"
+        if @ffmpeg
+          command = "curl -# -L '#{url}' | ffmpeg -i - -vcodec mpeg4 -r 23.976 -b 600k -acodec libfaac -ac 2 -ar 44100 -ab 64k '#{path}.mp4' &"
+        else
+          command = "curl -# -L -R -o '#{path}' '#{url}' &"
+        end
         puts command 
         system command 
         @fetching -= 1
