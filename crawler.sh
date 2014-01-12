@@ -5,4 +5,4 @@ PID=`ps x | grep -v grep | grep "crawler.rb" | awk '{ print $1 }'`
 if [ x"$PID" != x"" ]; then
     kill -9 $PID
 fi
-bundle exec ruby crawler.rb
+bundle exec ruby -W0 crawler.rb

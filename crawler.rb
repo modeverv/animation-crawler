@@ -29,6 +29,7 @@ class Crawler
   # constructor
   # hash[:ffmpeg] convert or not
   # hash[:debug] debug or not
+  # hash[:usecurl] download by curl
   def initialize hash
     @queue = []
     @queue.push({ kind: JOB_ANISOKUTOP, value: START_URL })
@@ -57,14 +58,14 @@ class Crawler
         
         if @fetching == 0
           @gaman -= 1
-          puts "fetching:#{@fetching} gaman:#{@gaman}"
+          print "fetching:#{@fetching} gaman:#{@gaman}\t"
           if @gaman == 0
             puts "finish"
             pp @downloads          
             EM::stop_event_loop
           end
         else
-          puts "fetching:#{@fetching}"
+          print "fetching:#{@fetching}\t"
           pp @downloads 
         end
       end
