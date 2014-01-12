@@ -115,7 +115,7 @@ class Crawler
     
     req.callback do
       page = Nokogiri::HTML(req.response)
-      page.css(".article ul li a").each { |a|
+      page.css("a").each { |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         if href =~ /^http\:\/\/youtubeanisoku1\.blog106\.fc2\.com\/blog-entry-....\.html$/
@@ -144,7 +144,7 @@ class Crawler
       page.css("a").each { |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
-        if href =~ /^http:\/\/www.nosub\.tv\/\?s=/
+        if href =~ /http:\/\/www.nosub\.tv/
           puts value[:title] + "-" + href if @debug 
           @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
         end
@@ -167,7 +167,7 @@ class Crawler
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
           .gsub(" ","").gsub("/","").gsub("　","").gsub("#","")
-        puts value[:title] + "-" + episode + "-" + href if @debug
+        puts value[:title] + "-" + episode + "-" + href 
         unless episode =~ /アニメPV集/
           hash = {title: value[:title] ,episode: episode, href: href }
           urls << hash
