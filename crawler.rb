@@ -363,7 +363,7 @@ class Crawler
 
   # convert
   def convert value
-    command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k -ac 2 -ar 44100 -ab 128k -strict experimental '#{value}.mp4'"
+    command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k  -ar 44100 -ab 128k -acodec aac -strict experimental '#{value}.mp4'"
     puts command
     system command
     command = "rm -f '#{value}'"
