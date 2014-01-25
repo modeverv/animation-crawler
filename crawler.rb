@@ -8,9 +8,11 @@ require 'open-uri'
 require 'httpclient'
 require 'mechanize'
 require 'net/http'
+require 'logger'
 
 class Crawler
   DOWNLOADDIR = "/var/smb/sdd1/video"
+  CrawlerLOGGER = Logger.new(DOWNLOADDIR + "/download.log")
   
   START_URL = 'http://youtubeanisoku1.blog106.fc2.com/'
   AGENT  = Mechanize.new
@@ -125,7 +127,7 @@ class Crawler
             title = a.attributes["title"].value
           end
           if title
-            puts title + "-" + href if @debug
+            # puts title + "-" + href if @debug
             title = title.gsub(" ","",).gsub("/","").gsub("#","")
             @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
           end
@@ -148,7 +150,7 @@ class Crawler
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         if href =~ /http:\/\/www.nosub\.tv/
           unless @titles[value[:title]]
-            puts value[:title] + "-" + href
+            # puts value[:title] + "-" + href
             @titles[value[:title]] = :pedinding
             @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
           end
@@ -172,7 +174,7 @@ class Crawler
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
           .gsub(" ","").gsub("/","").gsub("　","").gsub("#","")
-        puts value[:title] + "-" + episode + "-" + href 
+        # puts value[:title] + "-" + episode + "-" + href 
         unless episode =~ /アニメPV集/
           hash = {title: value[:title] ,episode: episode, href: href }
           urls << hash
@@ -244,7 +246,7 @@ class Crawler
                     false
                   end
             
-            puts "#{url} - #{l}" if @debug
+            # puts "#{url} - #{l}" if @debug
             checksize = checkvideourl url if url
             if checksize
               downloadvideo url , path , checksize if url
@@ -261,7 +263,7 @@ class Crawler
   
   def checkvideourl url 
     check = false
-    puts "checkvideo url: #{url}"  if @debug
+    # puts "checkvideo url: #{url}"  if @debug
     begin
       http  = Net::HTTP.new(URI.parse(url).host)
       res = http.request_head(URI.parse(url))
@@ -293,6 +295,8 @@ class Crawler
     @downloads[path] = "start"
     fetched = false
     begin
+      
+      CrawlerLOGGER.info path
 
       if @usecurl
         @fetching += 1
@@ -360,7 +364,6 @@ class Crawler
     fetched 
   end
   
-
   # convert
   def convert value
     command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k  -ar 44100 -ab 128k -acodec aac -strict experimental '#{value}.mp4'"
