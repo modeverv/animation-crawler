@@ -2,7 +2,7 @@
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: generic.rb 36476 2012-07-20 01:56:21Z drbrain $
+# Revision:: $Id: generic.rb 32560 2011-07-15 21:32:02Z marcandre $
 #
 # See URI for general documentation
 #
@@ -86,8 +86,8 @@ module URI
       rescue InvalidComponentError
         if args.kind_of?(Array)
           return self.build(args.collect{|x|
-            if x.is_a?(String)
-              DEFAULT_PARSER.escape(x)
+            if x
+              parser.escape(x)
             else
               x
             end
@@ -96,7 +96,7 @@ module URI
           tmp = {}
           args.each do |key, value|
             tmp[key] = if value
-                DEFAULT_PARSER.escape(value)
+                parser.escape(value)
               else
                 value
               end
@@ -121,7 +121,7 @@ module URI
     def self.build(args)
       if args.kind_of?(Array) &&
           args.size == ::URI::Generic::COMPONENT.size
-        tmp = args.dup
+        tmp = args
       elsif args.kind_of?(Hash)
         tmp = ::URI::Generic::COMPONENT.collect do |c|
           if args.include?(c)
@@ -131,9 +131,8 @@ module URI
           end
         end
       else
-        component = self.class.component rescue ::URI::Generic::COMPONENT
         raise ArgumentError,
-        "expected Array of or Hash of components of #{self.class} (#{component.join(', ')})"
+        "expected Array of or Hash of components of #{self.class} (#{self.class.component.join(', ')})"
       end
 
       tmp << nil
@@ -340,7 +339,7 @@ module URI
     # see also URI::Generic.scheme=
     #
     def set_scheme(v)
-      @scheme = v ? v.downcase : v
+      @scheme = v
     end
     protected :set_scheme
 
@@ -1595,82 +1594,6 @@ module URI
       end
 
       return oth, self
-    end
-
-    # returns a proxy URI.
-    # The proxy URI is obtained from environment variables such as http_proxy,
-    # ftp_proxy, no_proxy, etc.
-    # If there is no proper proxy, nil is returned.
-    #
-    # Note that capitalized variables (HTTP_PROXY, FTP_PROXY, NO_PROXY, etc.)
-    # are examined too.
-    #
-    # But http_proxy and HTTP_PROXY is treated specially under CGI environment.
-    # It's because HTTP_PROXY may be set by Proxy: header.
-    # So HTTP_PROXY is not used.
-    # http_proxy is not used too if the variable is case insensitive.
-    # CGI_HTTP_PROXY can be used instead.
-    def find_proxy
-      name = self.scheme.downcase + '_proxy'
-      proxy_uri = nil
-      if name == 'http_proxy' && ENV.include?('REQUEST_METHOD') # CGI?
-        # HTTP_PROXY conflicts with *_proxy for proxy settings and
-        # HTTP_* for header information in CGI.
-        # So it should be careful to use it.
-        pairs = ENV.reject {|k, v| /\Ahttp_proxy\z/i !~ k }
-        case pairs.length
-        when 0 # no proxy setting anyway.
-          proxy_uri = nil
-        when 1
-          k, _ = pairs.shift
-          if k == 'http_proxy' && ENV[k.upcase] == nil
-            # http_proxy is safe to use because ENV is case sensitive.
-            proxy_uri = ENV[name]
-          else
-            proxy_uri = nil
-          end
-        else # http_proxy is safe to use because ENV is case sensitive.
-          proxy_uri = ENV.to_hash[name]
-        end
-        if !proxy_uri
-          # Use CGI_HTTP_PROXY.  cf. libwww-perl.
-          proxy_uri = ENV["CGI_#{name.upcase}"]
-        end
-      elsif name == 'http_proxy'
-        unless proxy_uri = ENV[name]
-          if proxy_uri = ENV[name.upcase]
-            warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
-          end
-        end
-      else
-        proxy_uri = ENV[name] || ENV[name.upcase]
-      end
-
-      if proxy_uri && self.hostname
-        require 'socket'
-        begin
-          addr = IPSocket.getaddress(self.hostname)
-          proxy_uri = nil if /\A127\.|\A::1\z/ =~ addr
-        rescue SocketError
-        end
-      end
-
-      if proxy_uri
-        proxy_uri = URI.parse(proxy_uri)
-        name = 'no_proxy'
-        if no_proxy = ENV[name] || ENV[name.upcase]
-          no_proxy.scan(/([^:,]*)(?::(\d+))?/) {|host, port|
-            if /(\A|\.)#{Regexp.quote host}\z/i =~ self.host &&
-               (!port || self.port == port.to_i)
-              proxy_uri = nil
-              break
-            end
-          }
-        end
-        proxy_uri
-      else
-        nil
-      end
     end
   end
 end

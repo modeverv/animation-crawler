@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 require 'pp'
 require './uri.rb'
+#require 'uri'
 # uriモジュールは|を許容するように変更している
 require 'eventmachine'
 require 'em-http'
@@ -11,13 +13,14 @@ require 'net/http'
 require 'logger'
 
 class Crawler
-  DOWNLOADDIR = "/var/smb/sdd1/video"
-  CrawlerLOGGER = Logger.new(DOWNLOADDIR + "/download.log")
+  DOWNLOADDIR = "/var/smb/sdc1/video"
+  CrawlerLOGGER = Logger.new(DOWNLOADDIR + "/0log/download_#{Time.now.strftime("%Y%m%d")}.log")
+  M3UPath = DOWNLOADDIR + "/0m3u/#{Time.now.strftime("%Y%m%d")}.m3u"
   
   START_URL = 'http://youtubeanisoku1.blog106.fc2.com/'
   AGENT  = Mechanize.new
   
-  CONCURRENCY = 128
+  CONCURRENCY = 32
   WATCH_INTERVAL = 1
   MEGA = (1024 * 1024).to_f
 
@@ -42,6 +45,7 @@ class Crawler
     @usecurl= hash[:usecurl]|| false
     @gaman  = 20
     @candidate = {}
+    @title = {}
     @titles = {}
   end
   
@@ -86,8 +90,10 @@ class Crawler
     when JOB_KOBETUPAGE
       anisokukobetu job[:value]
     when JOB_NOSUBSEARCH
+      sleep 0.5
       nosubsearch job[:value]
     when JOB_NOSUBVIDEO
+      sleep 0.6
       nosubvideo job[:value]
     when JOB_CONVERT
       convert job[:value]
@@ -103,7 +109,7 @@ class Crawler
     req.callback do
       page = Nokogiri::HTML(req.response)
       page.css(".Top_info div ul li a").each {|a|
-        if a.attributes['title'].value =~ /更新状況/
+        if a.attributes['title']  && a.attributes['title'].value =~ /更新状況/
           @queue.push({kind: JOB_KOUSINPAGE, value: a.attributes['href'].value })
         end
       }
@@ -113,6 +119,7 @@ class Crawler
 
   # anisoku kousin
   def anisokukousin url
+    puts "anisokukousin : " + url
     req = EM::HttpRequest.new(url,:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
@@ -128,8 +135,15 @@ class Crawler
           end
           if title
             # puts title + "-" + href if @debug
-            title = title.gsub(" ","",).gsub("/","").gsub("#","")
-            @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
+            title = title.gsub(" ","",).gsub("/","").gsub("#","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+            if @title[title]
+              #do nothing
+              puts "skip:" + title
+            else
+              @title[title] = 1
+              puts "do:" + title
+              @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
+            end
           end
         end
       }
@@ -139,6 +153,7 @@ class Crawler
 
   # anisoku kobetu
   def anisokukobetu value
+    puts "anisokukobetu : " + value.to_s
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
@@ -161,6 +176,7 @@ class Crawler
   end
 
   def nosubsearch value
+    puts "nosubsearch  : " + value.to_s
     urls = []
     
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
@@ -173,7 +189,7 @@ class Crawler
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
-          .gsub(" ","").gsub("/","").gsub("　","").gsub("#","")
+            .gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
         # puts value[:title] + "-" + episode + "-" + href 
         unless episode =~ /アニメPV集/
           hash = {title: value[:title] ,episode: episode, href: href }
@@ -186,12 +202,14 @@ class Crawler
   end
   
   def nosubvideo value
+    puts "nosubvideo  : " + value.to_s
+    
     urls = []
     fetched = false
 
     value.each { |val|
       path = mkfilepath val[:title],val[:episode]
-      
+      path = path.gsub("<u>","").gsub("'","").gsub(/"/,"")
       if File.exists?(path) || File.exists?(path + ".mp4")
         fetched = true
         @fetching -= 1
@@ -246,12 +264,12 @@ class Crawler
                     false
                   end
             
-            # puts "#{url} - #{l}" if @debug
-            checksize = checkvideourl url if url
-            if checksize
-              downloadvideo url , path , checksize if url
+            #checksize = checkvideourl url if url
+            #if checksize
+            #downloadvideo url , path , checksize if url
+            downloadvideo url , path , 10000 if url
               fetched = true
-            end
+            #end
             break if fetched
           }
         }
@@ -261,12 +279,14 @@ class Crawler
     @fetching -= 1
   end
   
-  def checkvideourl url 
+  def checkvideourl url
+
     check = false
-    # puts "checkvideo url: #{url}"  if @debug
+    puts "checkvideo url: #{url}"  if @debug
     begin
       http  = Net::HTTP.new(URI.parse(url).host)
-      res = http.request_head(URI.parse(url))
+      #res = http.request_head(URI.parse(url))
+      res = http.request_head(url)
       if res['location']
         return checkvideourl res['location']
       else
@@ -285,8 +305,10 @@ class Crawler
   end
   
   def downloadvideo url , path , size
-    downloaded = 0
+    puts "downloadvideo : " + path
     
+    downloaded = 0
+    path = path.gsub("<u>","")
     if File.exists?(path) || File.exists?(path + ".mp4")
       return 
     end
@@ -297,11 +319,13 @@ class Crawler
     begin
       
       CrawlerLOGGER.info path
-
+      
+      open(M3UPath,"a") { |io| io.puts path }
+      
       if @usecurl
         @fetching += 1
         if @ffmpeg
-          command = "curl -# -L '#{url}' | ffmpeg -i - -vcodec mpeg4 -r 23.976 -b 600k -acodec libfaac -ac 2 -ar 44100 -ab 64k '#{path}.mp4' &"
+          command = "curl -# -L '#{url}' | ffmpeg -i - -vcodec mpeg4 -r 23.976 -b 600k -ab 64k -acodec aac -strict experimental '#{path}.mp4' &"
         else
           command = "curl -# -L -R -o '#{path}' '#{url}' &"
         end
@@ -366,7 +390,7 @@ class Crawler
   
   # convert
   def convert value
-    command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k  -ar 44100 -ab 128k -acodec aac -strict experimental '#{value}.mp4'"
+    command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k  -ar 44100 -ab 64k -acodec aac -strict experimental '#{value}.mp4'"
     puts command
     system command
     command = "rm -f '#{value}'"

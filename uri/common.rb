@@ -2,7 +2,7 @@
 # = uri/common.rb
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
-# Revision:: $Id: common.rb 34364 2012-01-24 02:52:09Z naruse $
+# Revision:: $Id: common.rb 34761 2012-02-23 05:45:08Z naruse $
 # License::
 #   You can redistribute it and/or modify it under the same term as Ruby.
 #
@@ -42,7 +42,6 @@ module URI
       #                 "$" | ","
       # reserved      = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
       #                 "$" | "," | "[" | "]" (RFC 2732)
-      # RESERVED = ";/?:@&=+$,\\[\\]"
       RESERVED = "|;/?:@&=+$,\\[\\]"
 
       # domainlabel   = alphanum | alphanum *( alphanum | "-" ) alphanum
@@ -259,7 +258,7 @@ module URI
     #
     # see also URI::Parser.make_regexp
     #
-    def extract(str, schemes = nil)
+    def extract(str, schemes = nil, &block)
       if block_given?
         str.scan(make_regexp(schemes)) { yield $& }
         nil
@@ -875,7 +874,7 @@ module URI
   # (ASCII space) to + and converts others to %XX.
   #
   # This is an implementation of
-  # http://www.w3.org/TR/html5/association-of-controls-and-forms.html#url-encoded-form-data
+  # http://www.w3.org/TR/html5/forms.html#url-encoded-form-data
   #
   # See URI.decode_www_form_component, URI.encode_www_form
   def self.encode_www_form_component(str)
