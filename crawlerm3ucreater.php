@@ -1,5 +1,8 @@
 <?php
 error_reporting(E_ALL);
+error_reporting(0);
+
+$info;
 
 dispatch();
 
@@ -9,6 +12,11 @@ function dispatch(){
         if($kind == "m3u"){
             sendM3u();
         }
+        if($kind == "search"){
+            find();
+        }
+    }else{
+        normal();
     }
 }
 
@@ -18,11 +26,15 @@ function sendM3u(){
 "新妹魔王の契約者BURST第03話「譲れない想いを君と」.flv",
 "/var/smb/sdc1/video/新妹魔王の契約者BURST/新妹魔王の契約者BURST第03話「譲れない想いを君と」.flv",
 "2015-10-24 12:49:37"]
+=>
 #EXTM3U
 #EXTINF:1450,おそ松さん03「こぼれ話集」.flv
 /Volumes/smb/sdc1/video/おそ松さん/おそ松さん03「こぼれ話集」.flv
      */
     $ids = $_REQUEST["ids"];
+    if(count($ids) == 0){
+        return;
+    }
     $pdo = getDB();
     $sql = "select * from crawler where id = :id ";
     $stmt = $pdo->prepare($sql);
@@ -40,6 +52,7 @@ function sendM3u(){
     header('Content-Disposition:filename=anime.m3u');  //ダウンロードするファイル名
     header('Content-Length:' . filesize($filename));   //ファイルサイズを指定
     readfile($filename);
+    unlink($filename);
     exit();
 }
 function formatAndWrite($fh,$row){
@@ -63,36 +76,60 @@ function getDB(){
     return $dbh;
 }
 
-function getInformations(){
+function normal(){
+    global $info;
     $pdo = getDB();
     $sql = "select * from crawler order by id desc limit 100";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $info = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    return $info;
 }
-$info = getInformations();
+function find(){
+    global $info;
+    if(isset($_REQUEST["search"]) && $_REQUEST["search"] != ""){
+        $pdo = getDB();
+        $sql = "select * from crawler where name like :name order by name,id ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array(":name" => "%".$_REQUEST["search"]."%"));
+        $info = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }else{
+        normal();
+    }
+}
 ?>
 <html>
 <head>
 <title>crawler m3u creater</title>
 <style>
-table,tr,td {
+table,tr,td,th {
   border:1px solid;
 }
 </style>
 </head>
 <body>
+<h1>crawler m3u creater</h1>
+<hr>
 <form>
-<input type="submit" name="submit" value="m3u"/>
+<div>
+  <input type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>" />
+  <input type="submit" name="submit" value="search"/>
+</div>
+<div>
+  <input type="submit" name="submit" value="m3u"/>
+</div>
 <table style="border:1px solid">
-<?php foreach($info as $row) { ?>
-<tr>
-  <td><input type="checkbox" name="ids[]" value="<?php echo $row['id']?>" /></td>
-  <td><?php echo $row["name"] ?></td>
-  <td><?php echo $row["created_at"] ?></td>                            
-</tr>
-<?php }?>                               
+  <tr>
+    <th></th>
+    <th>title</th>
+    <th>created_at</th>
+  </tr>
+  <?php foreach($info as $row) { ?>
+  <tr>
+    <td><input type="checkbox" name="ids[]" value="<?php echo $row['id']?>" /></td>
+    <td><?php echo $row["name"] ?></td>
+    <td><?php echo $row["created_at"] ?></td>                            
+  </tr>
+  <?php }?>                               
 </table>
 </form>
 </body>
