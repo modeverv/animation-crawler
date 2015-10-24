@@ -65,7 +65,7 @@ function getDB(){
 
 function getInformations(){
     $pdo = getDB();
-    $sql = "select * from crawler order by id desc ";
+    $sql = "select * from crawler order by id desc limit 100";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $info = $stmt->fetchAll(PDO::FETCH_ASSOC);
