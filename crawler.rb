@@ -11,6 +11,7 @@ require 'httpclient'
 require 'mechanize'
 require 'net/http'
 require 'logger'
+require 'sqlite3'
 
 class Crawler
   DOWNLOADDIR = "/var/smb/sdc1/video"
@@ -47,6 +48,19 @@ class Crawler
     @candidate = {}
     @title = {}
     @titles = {}
+    @db = SQLite3::Database.new("crawler.db")
+    sql = <<-SQL
+CREATE TABLE IF NOT EXISTS crawler(
+  id integer primary key,
+  name text,
+  path text,
+  created_at TIMESTAMP DEFAULT (DATETIME('now','localtime'))
+);
+SQL
+    @db.execute sql
+    @sql = <<-SQL
+insert into crawler(name,path) values(:name,:path)
+SQL
   end
   
   def run
@@ -71,6 +85,7 @@ class Crawler
             puts "finish"
             pp @downloads          
             EM::stop_event_loop
+            @db.close
           end
         else
           print "fetching:#{@fetching}\t"
@@ -135,14 +150,16 @@ class Crawler
           end
           if title
             # puts title + "-" + href if @debug
-            title = title.gsub(" ","",).gsub("/","").gsub("#","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+            title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
             if @title[title]
               #do nothing
               puts "skip:" + title
             else
               @title[title] = 1
               puts "do:" + title
-              @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
+              #if title =~ /アクエリオン/
+                @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
+              #end
             end
           end
         end
@@ -189,7 +206,7 @@ class Crawler
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
-            .gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+            .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
         # puts value[:title] + "-" + episode + "-" + href 
         unless episode =~ /アニメPV集/
           hash = {title: value[:title] ,episode: episode, href: href }
@@ -209,8 +226,11 @@ class Crawler
 
     value.each { |val|
       path = mkfilepath val[:title],val[:episode]
+      puts "before:" + path
       path = path.gsub("<u>","").gsub("'","").gsub(/"/,"")
+      puts "after:" + path
       if File.exists?(path) || File.exists?(path + ".mp4")
+        puts "already exists. #{path} "
         fetched = true
         @fetching -= 1
         return 
@@ -233,11 +253,14 @@ class Crawler
       req.errback { @fetching -= 1 }
 
       req.callback do
+        #p req.response
         page = Nokogiri::HTML(req.response)
         videos = []
         page.css("script[type='text/javascript']").each { |script|
+          p script.children[0]
           next unless script.children[0] && script.children[0].to_s =~ /MukioPlayerURI/
           lines = script.children[0].to_s.gsub("\n","").split(";")
+          p lines
           lines.each {|l|
             next unless l =~ /addVideo/
             l =~ /type=(.*?)&/
@@ -251,6 +274,7 @@ class Crawler
                     x
                   when "video"
                     l =~ /file=(.*?)&/
+                    puts "video find!! #{$1} #{path} " 
                     #http://www.nosub.tv/wp-content/plugins/mukiopress/lianyue/?/url/XBCAVbX1ZVVVUGXB1RTEYVRl9JGF9VUAUDUVUAGRdBHFhEAA4LEgRLWRZWFgkLSlwRA1pFGzVaXQ0kVl5SAwYJGTAJDA0gC19UAA0IHAhFUQYt4F4CcB
                     clnt = HTTPClient.new()
                     res = clnt.get($1)
@@ -263,7 +287,9 @@ class Crawler
                   else
                     false
                   end
-            
+
+            puts path + ":" + url if url
+
             #checksize = checkvideourl url if url
             #if checksize
             #downloadvideo url , path , checksize if url
@@ -271,9 +297,9 @@ class Crawler
               fetched = true
             #end
             break if fetched
-          }
+                  }
         }
-        @fetching -= 1        
+                @fetching -= 1        
       end
     }
     @fetching -= 1
@@ -333,6 +359,7 @@ class Crawler
         system command 
         @fetching -= 1
         @downloads[path] = "complete"
+        @db.execute(@sql,:name => (File.basename path) ,:path => path )
         return 
       end
       
