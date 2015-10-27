@@ -331,6 +331,10 @@ SQL
   end
   
   def downloadvideo url , path , size
+    base = (File.basename path)
+    if base =~ /\[720p\]/
+      return
+    end
     puts "downloadvideo : " + path
     
     downloaded = 0
