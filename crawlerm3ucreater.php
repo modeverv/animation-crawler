@@ -97,27 +97,36 @@ function find(){
     }
 }
 ?>
+<!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>crawler m3u creater</title>
-<style>
-table,tr,td,th {
-  border:1px solid;
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+<script>
+function uncheck(){
+    $(".chk").prop("checked",false);
 }
-</style>
+</script>
 </head>
 <body>
+<div class="container">
 <h1>crawler m3u creater</h1>
 <hr>
 <form>
-<div>
-  <input type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>" />
-  <input type="submit" name="submit" value="search"/>
+<div class="form-group form-inline">
+  <input class="form-control" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>" />
+  <input class="btn btn-primary" type="submit" name="submit" value="search"/>
 </div>
-<div>
-  <input type="submit" name="submit" value="m3u"/>
+<div class="form-group form-inline">
+  <button class="btn " type="button" onclick="uncheck();return false;">uncheck all</button>
+  <input class="btn btn-primary" type="submit" name="submit" value="m3u"/>
 </div>
-<table style="border:1px solid">
+<table class="table table-hover table-striped">
   <tr>
     <th></th>
     <th>title</th>
@@ -125,12 +134,13 @@ table,tr,td,th {
   </tr>
   <?php foreach($info as $row) { ?>
   <tr>
-    <td><input type="checkbox" name="ids[]" value="<?php echo $row['id']?>" /></td>
+    <td><input class="chk" type="checkbox" name="ids[]" value="<?php echo $row['id']?>" /></td>
     <td><?php echo $row["name"] ?></td>
     <td><?php echo $row["created_at"] ?></td>                            
   </tr>
   <?php }?>                               
 </table>
 </form>
+</div>
 </body>
 </html>
