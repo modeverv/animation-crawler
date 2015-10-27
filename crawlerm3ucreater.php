@@ -129,7 +129,7 @@ function uncheck(){
   <input class="btn btn-primary" type="submit" name="submit" value="m3u"/>
 </div>
 <div>
-<table class="table table-hover table-striped">
+<table class="table table-hover table-bordered">
   <tr>
     <th></th>
     <th>title</th>
