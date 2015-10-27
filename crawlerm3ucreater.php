@@ -55,6 +55,7 @@ function sendM3u(){
     unlink($filename);
     exit();
 }
+
 function formatAndWrite($fh,$row){
     fwrite($fh,"#EXTINF:1450," . $row["name"] . "\n");
     $path = str_replace("/var/","/Volumes/",$row["path"]);
@@ -84,6 +85,7 @@ function normal(){
     $stmt->execute();
     $info = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
 function find(){
     global $info;
     if(isset($_REQUEST["search"]) && $_REQUEST["search"] != ""){
@@ -119,27 +121,29 @@ function uncheck(){
 <hr>
 <form>
 <div class="form-group form-inline">
-  <input class="form-control" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>" />
+  <input class="form-control" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
   <input class="btn btn-primary" type="submit" name="submit" value="search"/>
 </div>
 <div class="form-group form-inline">
   <button class="btn " type="button" onclick="uncheck();return false;">uncheck all</button>
   <input class="btn btn-primary" type="submit" name="submit" value="m3u"/>
 </div>
+<div>
 <table class="table table-hover table-striped">
   <tr>
     <th></th>
     <th>title</th>
     <th>created_at</th>
   </tr>
-  <?php foreach($info as $row) { ?>
+<?php foreach($info as $row) { ?>
   <tr>
-    <td><input class="chk" type="checkbox" name="ids[]" value="<?php echo $row['id']?>" /></td>
+    <td><input class="chk" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
     <td><?php echo $row["name"] ?></td>
     <td><?php echo $row["created_at"] ?></td>                            
   </tr>
-  <?php }?>                               
+<?php }?>
 </table>
+</div>
 </form>
 </div>
 </body>
