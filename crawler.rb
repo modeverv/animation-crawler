@@ -290,12 +290,12 @@ SQL
 
             puts path + ":" + url if url
 
-            #checksize = checkvideourl url if url
-            #if checksize
-            #downloadvideo url , path , checksize if url
-            downloadvideo url , path , 10000 if url
+            checksize = checkvideourl url if url
+            if checksize
+              downloadvideo url , path , checksize if url
+              #downloadvideo url , path , 10000 if url
               fetched = true
-            #end
+            end
             break if fetched
                   }
         }
