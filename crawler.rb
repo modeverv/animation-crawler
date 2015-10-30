@@ -331,7 +331,7 @@ SQL
   end
 
   def downloadvideo url , path , size
-    base = (File.basename path)
+    base = File.basename path
     if base =~ /\[720p\]/
       return
     end
