@@ -17,10 +17,10 @@ class Crawler
   DOWNLOADDIR = "/var/smb/sdc1/video"
   CrawlerLOGGER = Logger.new(DOWNLOADDIR + "/0log/download_#{Time.now.strftime("%Y%m%d")}.log")
   M3UPath = DOWNLOADDIR + "/0m3u/#{Time.now.strftime("%Y%m%d")}.m3u"
-  
+
   START_URL = 'http://youtubeanisoku1.blog106.fc2.com/'
   AGENT  = Mechanize.new
-  
+
   CONCURRENCY = 32
   WATCH_INTERVAL = 1
   MEGA = (1024 * 1024).to_f
@@ -62,37 +62,37 @@ SQL
 insert into crawler(name,path) values(:name,:path)
 SQL
   end
-  
+
   def run
     EM.run do
       EM.add_periodic_timer(WATCH_INTERVAL) do
-       
+
         diff = CONCURRENCY - @fetching
 
         diff.times do
           job = @queue.pop
-          unless job 
+          unless job
             break
           end
 
           process job
         end
-        
+
         if @fetching == 0
           @gaman -= 1
           print "fetching:#{@fetching} gaman:#{@gaman}\t"
           if @gaman == 0
             puts "finish"
-            pp @downloads          
+            pp @downloads
             EM::stop_event_loop
             @db.close
           end
         else
           print "fetching:#{@fetching}\t"
-          pp @downloads 
+          pp @downloads
         end
       end
-    end    
+    end
   end
 
   def process job
@@ -129,7 +129,7 @@ SQL
         end
       }
       @fetching -= 1
-    end    
+    end
   end
 
   # anisoku kousin
@@ -138,7 +138,7 @@ SQL
     req = EM::HttpRequest.new(url,:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
-    
+
     req.callback do
       page = Nokogiri::HTML(req.response)
       page.css("a").each { |a|
@@ -165,7 +165,7 @@ SQL
         end
       }
       @fetching -= 1
-    end    
+    end
   end
 
   # anisoku kobetu
@@ -189,15 +189,15 @@ SQL
         end
       }
       @fetching -= 1
-    end    
+    end
   end
 
   def nosubsearch value
     puts "nosubsearch  : " + value.to_s
     urls = []
-    
+
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
-    
+
     req.errback { @fetching -= 1 }
 
     req.callback do
@@ -207,7 +207,7 @@ SQL
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
             .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
-        # puts value[:title] + "-" + episode + "-" + href 
+        # puts value[:title] + "-" + episode + "-" + href
         unless episode =~ /アニメPV集/
           hash = {title: value[:title] ,episode: episode, href: href }
           urls << hash
@@ -217,10 +217,10 @@ SQL
       @fetching -= 1
     end
   end
-  
+
   def nosubvideo value
     puts "nosubvideo  : " + value.to_s
-    
+
     urls = []
     fetched = false
 
@@ -233,9 +233,9 @@ SQL
         puts "already exists. #{path} "
         fetched = true
         @fetching -= 1
-        return 
+        return
       end
-      
+
       if @candidate[path]
         fetched = true
         @fetching -= 1
@@ -243,11 +243,11 @@ SQL
       end
 
       @candidate[path] = :pending
-      
+
       break if fetched
-      
+
       @fetching += 1
-      
+
       req = EM::HttpRequest.new(val[:href],:connect_timeout => 50).get
 
       req.errback { @fetching -= 1 }
@@ -274,7 +274,7 @@ SQL
                     x
                   when "video"
                     l =~ /file=(.*?)&/
-                    puts "video find!! #{$1} #{path} " 
+                    puts "video find!! #{$1} #{path} "
                     #http://www.nosub.tv/wp-content/plugins/mukiopress/lianyue/?/url/XBCAVbX1ZVVVUGXB1RTEYVRl9JGF9VUAUDUVUAGRdBHFhEAA4LEgRLWRZWFgkLSlwRA1pFGzVaXQ0kVl5SAwYJGTAJDA0gC19UAA0IHAhFUQYt4F4CcB
                     clnt = HTTPClient.new()
                     res = clnt.get($1)
@@ -290,21 +290,21 @@ SQL
 
             puts path + ":" + url if url
 
-            checksize = checkvideourl url if url
-            if checksize
-              downloadvideo url , path , checksize if url
-              #downloadvideo url , path , 10000 if url
+            #checksize = checkvideourl url if url
+            #if checksize
+              #downloadvideo url , path , checksize if url
+              downloadvideo url , path , 10000 if url
               fetched = true
-            end
+            #end
             break if fetched
-                  }
+           }
         }
-                @fetching -= 1        
+        @fetching -= 1
       end
     }
     @fetching -= 1
   end
-  
+
   def checkvideourl url
 
     check = false
@@ -329,29 +329,29 @@ SQL
     puts "checkvideo url: #{url} check: #{check.to_s}"  if @debug
     return check
   end
-  
+
   def downloadvideo url , path , size
     base = (File.basename path)
     if base =~ /\[720p\]/
       return
     end
     puts "downloadvideo : " + path
-    
+
     downloaded = 0
     path = path.gsub("<u>","")
     if File.exists?(path) || File.exists?(path + ".mp4")
-      return 
+      return
     end
-    
+
     puts "download start: #{url} - #{path}"
     @downloads[path] = "start"
     fetched = false
     begin
-      
+
       CrawlerLOGGER.info path
-      
+
       open(M3UPath,"a") { |io| io.puts path }
-      
+
       if @usecurl
         @fetching += 1
         if @ffmpeg
@@ -359,23 +359,23 @@ SQL
         else
           command = "curl -# -L -R -o '#{path}' '#{url}' &"
         end
-        puts command 
-        system command 
+        puts command
+        system command
         @fetching -= 1
         @downloads[path] = "complete"
         @db.execute(@sql,:name => (File.basename path) ,:path => path )
-        return 
+        return
       end
-      
+
       command = "touch '#{path}'"
       system command
-      
+
       @fetching += 1
 
       file = open(path, "w+b")
       http = EM::HttpRequest.new(url,:connect_timeout => 50)
         .get({:redirects => 10,:head => {"accept-encoding" => "gzip, compressed"}})
-      
+
       http.errback {|client|
         @downloads[path] = "error"
         p "download error: #{path} #{client.inspect}";
@@ -384,7 +384,7 @@ SQL
         command = "rm -f '#{path}'"
         system command
       }
-      
+
       http.callback {
         file.close
         unless http.response_header.status == 200
@@ -400,7 +400,7 @@ SQL
       http.headers do |hash|
         p [:headers, hash]
       end
-      
+
       http.stream do |chunk|
         downloaded += chunk.length
         puts "#{File.basename path} : #{chunk.length}" if @debug
@@ -416,9 +416,9 @@ SQL
       p ex
       fetched = false
     end
-    fetched 
+    fetched
   end
-  
+
   # convert
   def convert value
     command = "ffmpeg -i '#{value}' -vcodec mpeg4 -r 23.976 -b 600k  -ar 44100 -ab 64k -acodec aac -strict experimental '#{value}.mp4'"
@@ -432,14 +432,14 @@ SQL
     mkdirectory title
     DOWNLOADDIR + "/" + title + "/" + episode + ".flv"
   end
-  
+
   def mkdirectory title
-    begin 
+    begin
       Dir.mkdir DOWNLOADDIR + "/" + title
     rescue => ex
     end
   end
-  
+
 end
 
 # 高速なサーバーならmp4に変換しておくほうがよいでしょう

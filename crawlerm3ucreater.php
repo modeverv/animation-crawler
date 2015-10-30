@@ -113,6 +113,11 @@ function find(){
 function uncheck(){
     $(".chk").prop("checked",false);
 }
+function prop(elem){
+    var chk_id = $(elem).data("value");
+    var id = "#" + chk_id;
+    $(id).prop("checked",!$(id).prop("checked"));
+}
 </script>
 </head>
 <body>
@@ -137,9 +142,9 @@ function uncheck(){
   </tr>
 <?php foreach($info as $row) { ?>
   <tr>
-    <td><input class="chk" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
-    <td><?php echo $row["name"] ?></td>
-    <td><?php echo $row["created_at"] ?></td>                            
+    <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
+    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["name"] ?></td>
+    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>                            
   </tr>
 <?php }?>
 </table>
