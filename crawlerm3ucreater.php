@@ -46,6 +46,7 @@ http://seijiro:fuga@modeverv.aa0.modeverv.aa0.netvolante.jp/video/
         $stmt->execute(array(":id" => $id));
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $row = $results[0];
+        $row["url"] = convertPath($row["path"]);
         formatAndWrite($fh,$row);
     }
     fclose($fh);
@@ -56,12 +57,15 @@ http://seijiro:fuga@modeverv.aa0.modeverv.aa0.netvolante.jp/video/
     unlink($filename);
     exit();
 }
+function convertPath($path){
+    $p = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$path);
+    return $p;
+}
 
 function formatAndWrite($fh,$row){
+    $path = convertPath($row['url']);
     fwrite($fh,"#EXTINF:1450," . $row["name"] . "\n");
-    //$path = str_replace("/var/","/Volumes/",$row["path"]);
-    $path = urlencode($path);
-    $path = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$row["path"]);
+    $path = str_replace("/var/","/Volumes/",$row["path"]);
     fwrite($fh,$path . "\n");
 }
 
@@ -86,7 +90,12 @@ function normal(){
     $sql = "select * from crawler order by id desc limit 100";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
-    $info = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $info = array();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach($rows as $row){
+       $row["url"] = convertPath($row["path"]);
+       $info[] = $row;
+    }
 }
 
 function find(){
@@ -96,8 +105,13 @@ function find(){
         $sql = "select * from crawler where name like :name order by name,id ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute(array(":name" => "%".$_REQUEST["search"]."%"));
-        $info = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }else{
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $info = array();
+        foreach($rows as $row){
+          $row["url"] = convertPath($row["path"]);
+          $info[] = $row;
+        }
+     }else{
         normal();
     }
 }
@@ -142,12 +156,14 @@ function prop(elem){
     <th></th>
     <th>title</th>
     <th>created_at</th>
+    <th>link</th>
   </tr>
 <?php foreach($info as $row) { ?>
   <tr>
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["name"] ?></td>
-    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>                            
+    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
+    <td><a href="<?php echo $row['url'] ?>">link</a></td>
   </tr>
 <?php }?>
 </table>
