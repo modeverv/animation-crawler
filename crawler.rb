@@ -21,7 +21,7 @@ class Crawler
   START_URL = 'http://youtubeanisoku1.blog106.fc2.com/'
   AGENT  = Mechanize.new
 
-  CONCURRENCY = 32
+  CONCURRENCY = 256 #32
   WATCH_INTERVAL = 1
   MEGA = (1024 * 1024).to_f
 
@@ -90,8 +90,10 @@ SQL
             @db.close
           end
         else
+          pp @queue
+          pp @queue.size
           @gaman = 20
-          # print "fetching:#{@fetching}\t"
+          print "fetching:#{@fetching}\t"
           pp @downloads
         end
       end
@@ -137,7 +139,7 @@ SQL
 
   # anisoku kousin
   def anisokukousin url
-    # puts "anisokukousin : " + url
+    puts "anisokukousin : " + url
     req = EM::HttpRequest.new(url,:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
@@ -173,7 +175,7 @@ SQL
 
   # anisoku kobetu
   def anisokukobetu value
-    # puts "anisokukobetu : " + value.to_s
+    puts "anisokukobetu : " + value.to_s
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
@@ -196,7 +198,7 @@ SQL
   end
 
   def nosubsearch value
-    # puts "nosubsearch  : " + value.to_s
+    puts "nosubsearch  : " + value.to_s
     urls = []
 
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
@@ -342,7 +344,8 @@ SQL
 
     downloaded = 0
     path = path.gsub("<u>","")
-    if File.exists?(path) || File.exists?(path + ".mp4")
+    pathmp4 = path.gsub(/flv$/,"mp4")
+    if File.exists?(path) || File.exists?(path + ".mp4") || File.exists?(pathmp4)
       return
     end
 
