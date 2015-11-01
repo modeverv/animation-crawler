@@ -235,7 +235,8 @@ SQL
       # puts "before:" + path
       path = path.gsub("<u>","").gsub("'","").gsub(/"/,"")
       # puts "after:" + path
-      if File.exists?(path) || File.exists?(path + ".mp4")
+      pathmp4 = path.gsub(/flv$/,"mp4")
+      if File.exists?(path) || File.exists?(path + ".mp4") || File.exists?(pathmp4)
         # puts "already exists. #{path} "
         fetched = true
         @fetching -= 1
