@@ -63,9 +63,9 @@ function convertPath($path){
 }
 
 function formatAndWrite($fh,$row){
-    $path = convertPath($row['url']);
+    $path = $row['url'];
     fwrite($fh,"#EXTINF:1450," . $row["name"] . "\n");
-    $path = str_replace("/var/","/Volumes/",$row["path"]);
+    //$path = str_replace("/var/","/Volumes/",$row["path"]);
     fwrite($fh,$path . "\n");
 }
 
@@ -90,12 +90,16 @@ function normal(){
     $sql = "select * from crawler order by id desc limit 100";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
+    $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+}
+
+function convertRows($rows){
     $info = array();
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     foreach($rows as $row){
-       $row["url"] = convertPath($row["path"]);
-       $info[] = $row;
+        $row["url"] = convertPath($row["path"]);
+        $info[] = $row;
     }
+    return $info;
 }
 
 function find(){
@@ -105,12 +109,7 @@ function find(){
         $sql = "select * from crawler where name like :name order by name,id ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute(array(":name" => "%".$_REQUEST["search"]."%"));
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $info = array();
-        foreach($rows as $row){
-          $row["url"] = convertPath($row["path"]);
-          $info[] = $row;
-        }
+        $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
      }else{
         normal();
     }

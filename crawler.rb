@@ -158,9 +158,9 @@ SQL
               #do nothing
               # puts "skip:" + title
             else
-              @title[title] = 1
-              puts "do:" + title
               #if title =~ /新妹魔王の契約者BURST/
+                @title[title] = 1
+                puts "do:" + title
                 @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
               #end
             end
@@ -211,7 +211,7 @@ SQL
         episode = a.attributes["title"].value
             .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
         # puts value[:title] + "-" + episode + "-" + href
-        unless episode =~ /アニメPV集/ && episode =~ /¥[720p¥]/
+        unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
           hash = {title: value[:title] ,episode: episode, href: href }
           urls << hash
         end
@@ -456,7 +456,7 @@ SQL
 
 end
 
-# 高速なサーバーならmp4に変換しておくほうがよいでしょう
+# 最近のflvは中身をそのままで外装を変換するだけなのでコンバートまでしてしまう。
 # Crawler.new(ffmpeg: false,debug: false,usecurl: true).run
 Crawler.new(ffmpeg: true,debug: false,usecurl: true).run
 
