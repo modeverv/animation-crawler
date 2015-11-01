@@ -30,6 +30,7 @@ function sendM3u(){
 #EXTM3U
 #EXTINF:1450,おそ松さん03「こぼれ話集」.flv
 /Volumes/smb/sdc1/video/おそ松さん/おそ松さん03「こぼれ話集」.flv
+http://seijiro:fuga@modeverv.aa0.modeverv.aa0.netvolante.jp/video/
      */
     $ids = $_REQUEST["ids"];
     if(count($ids) == 0){
@@ -58,7 +59,9 @@ function sendM3u(){
 
 function formatAndWrite($fh,$row){
     fwrite($fh,"#EXTINF:1450," . $row["name"] . "\n");
-    $path = str_replace("/var/","/Volumes/",$row["path"]);
+    //$path = str_replace("/var/","/Volumes/",$row["path"]);
+    $path = urlencode($path);
+    $path = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$row["path"]);
     fwrite($fh,$path . "\n");
 }
 
