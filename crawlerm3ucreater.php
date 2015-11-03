@@ -22,15 +22,16 @@ function dispatch(){
 
 function sendM3u(){
     /*
-[32,
-"新妹魔王の契約者BURST第03話「譲れない想いを君と」.flv",
-"/var/smb/sdc1/video/新妹魔王の契約者BURST/新妹魔王の契約者BURST第03話「譲れない想いを君と」.flv",
-"2015-10-24 12:49:37"]
-=>
-#EXTM3U
-#EXTINF:1450,おそ松さん03「こぼれ話集」.flv
-/Volumes/smb/sdc1/video/おそ松さん/おそ松さん03「こぼれ話集」.flv
-http://seijiro:fuga@modeverv.aa0.modeverv.aa0.netvolante.jp/video/
+    [32,
+    "新妹魔王の契約者BURST第03話「譲れない想いを君と」.flv",
+    "/var/smb/sdc1/video/新妹魔王の契約者BURST/新妹魔王の契約者BURST第03話「譲れない想いを君と」.flv",
+    "2015-10-24 12:49:37"]
+    =>
+    #EXTM3U
+    #EXTINF:1450,おそ松さん03「こぼれ話集」.flv
+    /Volumes/smb/sdc1/video/おそ松さん/おそ松さん03「こぼれ話集」.flv
+    =>
+    http://seijiro:fuga@modeverv.aa0.modeverv.aa0.netvolante.jp/video/
      */
     $ids = $_REQUEST["ids"];
     if(count($ids) == 0){
@@ -119,7 +120,7 @@ function find(){
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>crawler m3u creater</title>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
@@ -134,6 +135,9 @@ function prop(elem){
     var id = "#" + chk_id;
     $(id).prop("checked",!$(id).prop("checked"));
 }
+function reload(){
+    location.reload(true);
+}
 </script>
 </head>
 <body>
@@ -146,11 +150,12 @@ function prop(elem){
   <input class="btn btn-primary" type="submit" name="submit" value="search"/>
 </div>
 <div class="form-group form-inline">
+  <button class="btn " type="button" onclick="reload();return false;">reload</button>
   <button class="btn " type="button" onclick="uncheck();return false;">uncheck all</button>
   <input class="btn btn-primary" type="submit" name="submit" value="m3u"/>
 </div>
 <div>
-<table class="table table-hover table-bordered">
+<table id="maintable" class="table table-hover table-bordered">
   <tr>
     <th></th>
     <th>title</th>
