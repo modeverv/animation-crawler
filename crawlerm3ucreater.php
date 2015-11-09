@@ -35,7 +35,7 @@ function sendM3u(){
      */
     $ids = $_REQUEST["ids"];
     if(count($ids) == 0){
-        return;
+        return normal();
     }
     $pdo = getDB();
     $sql = "select * from crawler where id = :id ";
@@ -109,7 +109,7 @@ function find(){
         $pdo = getDB();
         $sql = "select * from crawler where name like :name order by name,id ";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute(array(":name" => "%".$_REQUEST["search"]."%"));
+        $stmt->execute(array(":name" => "%".trim($_REQUEST["search"])."%"));
         $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
      }else{
         normal();
@@ -121,6 +121,7 @@ function find(){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"/>    
 <title>crawler m3u creater</title>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
@@ -145,17 +146,18 @@ function reload(){
 <h1>crawler m3u creater</h1>
 <hr>
 <form>
-<div class="form-group form-inline">
-  <input class="form-control" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
-  <input class="btn btn-primary" type="submit" name="submit" value="search"/>
-</div>
-<div class="form-group form-inline">
-  <button class="btn " type="button" onclick="reload();return false;">reload</button>
-  <button class="btn " type="button" onclick="uncheck();return false;">uncheck all</button>
-  <input class="btn btn-primary" type="submit" name="submit" value="m3u"/>
+<div>
+  <input class="col-xs-9 col-sm-9 col-md-9 col-lg-10" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
+  <input class="btn btn-primary col-xs-3 col-sm-3 col-md-3 col-lg-2" type="submit" name="submit" value="search"/>
 </div>
 <div>
-<table id="maintable" class="table table-hover table-bordered">
+  <!-- <button class="btn btn-primary" type="button" onclick="reload();return false;">reload</button> -->
+  <!-- <button class="btn btn-primary" type="button" onclick="uncheck();return false;">uncheck all</button>-->
+  <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
+  <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
+</div>
+<div>
+<table id="maintable" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 table table-hover table-bordered">
   <tr>
     <th></th>
     <th>title</th>
@@ -167,7 +169,7 @@ function reload(){
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
-    <td><a href="<?php echo $row['url'] ?>">link</a></td>
+    <td><a href="<?php echo $row['url'] ?>" target="_blank">video</a></td>
   </tr>
 <?php }?>
 </table>
