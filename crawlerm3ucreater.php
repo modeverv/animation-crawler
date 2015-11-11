@@ -59,14 +59,15 @@ function sendM3u(){
     exit();
 }
 function convertPath($path){
-    $p = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$path);
+    $p = str_replace(" ","%20",$path);
+    $p = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$p);
+    $p = str_replace("/var/smb/sdb1/video","http://seijiro:fuga@modeverv.aa0.netvolante.jp/video2",$p);
     return $p;
 }
 
 function formatAndWrite($fh,$row){
     $path = $row['url'];
     fwrite($fh,"#EXTINF:1450," . $row["name"] . "\n");
-    //$path = str_replace("/var/","/Volumes/",$row["path"]);
     fwrite($fh,$path . "\n");
 }
 
