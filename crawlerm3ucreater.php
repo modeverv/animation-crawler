@@ -1,6 +1,15 @@
 <?php
-error_reporting(E_ALL);
 error_reporting(0);
+
+switch (true) {
+    case !isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']):
+    case $_SERVER['PHP_AUTH_USER'] !== 'admin':
+    case $_SERVER['PHP_AUTH_PW']   !== 'test':
+        header('WWW-Authenticate: Basic realm="Enter username and password."');
+        header('Content-Type: text/plain; charset=utf-8');
+        die('need login');
+}
+//header('Content-Type: text/html; charset=utf-8');
 
 $info;
 
