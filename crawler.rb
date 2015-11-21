@@ -213,7 +213,8 @@ SQL
         episode = a.attributes["title"].value
             .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
         # puts value[:title] + "-" + episode + "-" + href
-        unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
+        # unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
+        unless episode =~ /アニメPV集/ 
           hash = {title: value[:title] ,episode: episode, href: href }
           urls << hash
         end
@@ -448,6 +449,7 @@ SQL
 
   def mkfilepath title,episode
     mkdirectory title
+    episode = episode.gsub(/\[720p\]/,"")
     DOWNLOADDIR + "/" + title + "/" + episode + ".flv"
   end
 
