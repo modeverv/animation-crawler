@@ -46,7 +46,8 @@ class Crawler
     @ffmpeg = arghash[:ffmpeg] || false
     @debug  = arghash[:debug] || false
     @usecurl= arghash[:usecurl]|| false
-    @gaman  = 20
+    @_gaman = 60
+    @gaman  = @_gaman
     @candidate = {}
     @title = {}
     @titles = {}
@@ -92,7 +93,7 @@ SQL
         else
           pp @queue
           pp @queue.size
-          @gaman = 20
+          @gaman = @_gaman
           print "fetching:#{@fetching}\t"
           pp @downloads
         end
@@ -139,7 +140,7 @@ SQL
 
   # anisoku kousin
   def anisokukousin url
-    puts "anisokukousin : " + url
+    # puts "anisokukousin : " + url
     req = EM::HttpRequest.new(url,:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
@@ -160,8 +161,8 @@ SQL
               #do nothing
               # puts "skip:" + title
             else
-              #if title =~ /新妹魔王の契約者BURST/
-                @title[title] = 1
+              #if title =~ /落第/ || title =~ /学園/ 
+                @title[title] = true
                 puts "do:" + title
                 @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
               #end
@@ -175,7 +176,7 @@ SQL
 
   # anisoku kobetu
   def anisokukobetu value
-    puts "anisokukobetu : " + value.to_s
+    # puts "anisokukobetu : " + value.to_s
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
@@ -198,7 +199,7 @@ SQL
   end
 
   def nosubsearch value
-    puts "nosubsearch  : " + value.to_s
+    # puts "nosubsearch  : " + value.to_s
     urls = []
 
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
@@ -212,7 +213,7 @@ SQL
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
             .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
-        # puts value[:title] + "-" + episode + "-" + href
+        puts value[:title] + "-" + episode + "-" + href
         # unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
         unless episode =~ /アニメPV集/ 
           hash = {title: value[:title] ,episode: episode, href: href }
@@ -233,29 +234,29 @@ SQL
     value.each { |val|
       path = mkfilepath val[:title],val[:episode]
       if path =~ /\[720p\]/
-        return
+      #  return
       end
       # puts "before:" + path
       path = path.gsub("<u>","").gsub("'","").gsub(/"/,"")
       # puts "after:" + path
       pathmp4 = path.gsub(/flv$/,"mp4")
-      if File.exists?(path) || File.exists?(path + ".mp4") || File.exists?(pathmp4)
-        # puts "already exists. #{path} "
+      if File.exists?(path) || File.exists?(pathmp4)
+        puts "already exists. #{path} "
         fetched = true
-        @fetching -= 1
-        return
       end
 
       if @candidate[path]
+        puts "candidate. #{path} "
         fetched = true
-        @fetching -= 1
-        return
       end
 
       @candidate[path] = :pending
 
-      break if fetched
-
+      if fetched
+        @fetching -= 1
+        next
+      end
+      
       @fetching += 1
 
       req = EM::HttpRequest.new(val[:href],:connect_timeout => 50).get

@@ -117,9 +117,9 @@ function find(){
     global $info;
     if(isset($_REQUEST["search"]) && $_REQUEST["search"] != ""){
         $pdo = getDB();
-        $sql = "select * from crawler where name like :name order by name,id ";
+        $sql = "select * from crawler where path like :path order by name,id ";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute(array(":name" => "%".trim($_REQUEST["search"])."%"));
+        $stmt->execute(array(":path" => "%".trim($_REQUEST["search"])."%"));
         $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
      }else{
         normal();
