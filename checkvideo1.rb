@@ -40,7 +40,7 @@ end
 
 def glob_flv
   filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.flv").each {|f|
+  Dir.glob("/var/smb/sdc1/video/**/*.flv").each {|f|
     filelist << f
   }
   filelist
@@ -48,31 +48,7 @@ end
 
 def glob_mp4
   filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.mp4").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_mkv
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.mkv").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_avi
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.avi").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_rmvb
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.rmvb").each {|f|
+  Dir.glob("/var/smb/sdc1/video/**/*.mp4").each {|f|
     filelist << f
   }
   filelist
@@ -83,7 +59,7 @@ end
 
 create_db
 
-filelist = glob_flv + glob_mp4 + glob_mkv + glob_avi + glob_rmvb
+filelist = glob_flv + glob_mp4
 
 filelist.sort.each{|f|
   insert f unless exists? f

@@ -64,6 +64,9 @@ SQL
     @sql = <<-SQL
 insert into crawler(name,path) values(:name,:path)
 SQL
+    @sql_select = <<-SQL
+select * from crawler where name = :name 
+SQL
   end
 
   def run
@@ -366,21 +369,30 @@ SQL
         if @ffmpeg
           puts "with ffmpeg"
           path2 = path.gsub(/flv$/,"mp4")
+          gifpath = mkgifpath path
           # command = "curl -# -L '#{url}' | ffmpeg -i - -vcodec mpeg4 -r 23.976 -b 600k -ab 64k -acodec aac -strict experimental '#{path2}' &"
           # command = "curl -# -L '#{url}' | ffmpeg -threads 4 -y -i - -vcodec copy -acodec aac -strict experimental '#{path2}' &"
           command = "curl -# -L '#{url}' | ffmpeg -threads 4 -y -i - -vcodec copy -acodec copy '#{path2}' &"
+          command = " curl -# -L '#{url}' | ffmpeg -threads 4 -y -i - -vcodec copy -acodec copy '#{path2}' && ffmpeg -ss 10 -i '#{path2}' -t 2.5 -an -r 100 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  &"
           puts command
           system command
           puts "¥@fetching -= 1"
           p @queue
           @fetching -= 1
-          @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          # result = @db.execute(@sql_select,:name => (File.basename path2))
+          # if resule.size == 0
+            @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          # end
           @downloads[path] = "complete"
         else
           command = "curl -# -L -R -o '#{path}' '#{url}' &"
-          @db.execute(@sql,:name => (File.basename path) ,:path => path )
+          # result = @db.execute(@sql_select,:name => (File.basename path2))
+          # if resule.size == 0
+            @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          # end
           puts command
           system command
+          
           @fetching -= 1
           @downloads[path] = "complete"
         end
@@ -460,7 +472,12 @@ SQL
     rescue => ex
     end
   end
-
+  
+  def mkgifpath path
+    filename =  File.basename(path).gsub(/flv$/,"gif").gsub(/mp4$/,"gif")
+    return "/var/smb/sdc1/video/tmp/" + filename
+  end
+  
 end
 
 # 最近のflvは中身をそのままで外装を変換するだけなのでコンバートまでしてしまう。

@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ALL);
 error_reporting(0);
+setlocale(LC_ALL, "ja_JP.utf8");
 
 $msg = "";
 

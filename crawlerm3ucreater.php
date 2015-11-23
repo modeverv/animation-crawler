@@ -1,5 +1,6 @@
 <?php
 error_reporting(0);
+setlocale(LC_ALL, "ja_JP.utf8");
 
 switch (true) {
     case !isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']):
@@ -67,10 +68,20 @@ function sendM3u(){
     unlink($filename);
     exit();
 }
+
 function convertPath($path){
     $p = str_replace(" ","%20",$path);
     $p = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$p);
     $p = str_replace("/var/smb/sdb1/video","http://seijiro:fuga@modeverv.aa0.netvolante.jp/video2",$p);
+    return $p;
+}
+
+function convertGif($path){
+    $base = basename($path);
+    $gif = str_replace("mp4","gif",$base);
+    $gif = str_replace("flv","gif",$gif);
+    $p = str_replace(" ","%20",$gif);
+    $p = "//seijiro:fuga@modeverv.aa0.netvolante.jp/video/tmp/" . $p;
     return $p;
 }
 
@@ -108,6 +119,7 @@ function convertRows($rows){
     $info = array();
     foreach($rows as $row){
         $row["url"] = convertPath($row["path"]);
+        $row["gif"] = convertGif($row["path"]);
         $info[] = $row;
     }
     return $info;
@@ -177,7 +189,7 @@ function reload(){
 <?php foreach($info as $row) { ?>
   <tr>
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
-    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["name"] ?></td>
+    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><img src="<?php echo $row['gif'] ?>" alt="gif"/><br/><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
     <td><a href="<?php echo $row['url'] ?>" target="_blank">video</a></td>
   </tr>
