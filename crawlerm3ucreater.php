@@ -77,9 +77,20 @@ function convertPath($path){
 }
 
 function convertGif($path){
+    $gif = str_replace("mp4","gif",$path);
+    $gif = str_replace("flv","gif",$gif);
+    $gif = str_replace("avi","gif",$gif);
+    $gif = str_replace("mkv","gif",$gif);
+    $gif = str_replace("rmvb","gif",$gif);
+    $gif = "/var/smb/sdc1/video/tmp/" . basename($gif);
+    $base64 = "data:image/gif;base64," . base64_encode(file_get_contents($gif));
+    return $base64;
     $base = basename($path);
     $gif = str_replace("mp4","gif",$base);
     $gif = str_replace("flv","gif",$gif);
+    $gif = str_replace("avi","gif",$gif);
+    $gif = str_replace("mkv","gif",$gif);
+    $gif = str_replace("rmvb","gif",$gif);
     $p = str_replace(" ","%20",$gif);
     $p = "//seijiro:fuga@modeverv.aa0.netvolante.jp/video/tmp/" . $p;
     return $p;
@@ -109,7 +120,7 @@ function getDB(){
 function normal(){
     global $info;
     $pdo = getDB();
-    $sql = "select * from crawler order by id desc limit 100";
+    $sql = "select * from crawler order by id desc limit 20";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
