@@ -2,6 +2,7 @@
 error_reporting(0);
 setlocale(LC_ALL, "ja_JP.utf8");
 
+// basic auth
 switch (true) {
     case !isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']):
     case $_SERVER['PHP_AUTH_USER'] !== 'admin':
@@ -10,12 +11,14 @@ switch (true) {
         header('Content-Type: text/plain; charset=utf-8');
         die('need login');
 }
-//header('Content-Type: text/html; charset=utf-8');
 
-$info;
+$info; // contains data which used for display
 
 dispatch();
 
+/**
+ * dispatcher
+ */
 function dispatch(){
     if(isset($_REQUEST["submit"])){
         $kind = $_REQUEST["submit"];
@@ -30,6 +33,20 @@ function dispatch(){
     }
 }
 
+/**
+ * @return is smartphone or not. when smartphone, return true;
+ */
+function isSmartPhone(){
+    $ua = $_SERVER['HTTP_USER_AGENT'];
+    if ((strpos($ua, 'Android') !== false) && (strpos($ua, 'Mobile') !== false) || (strpos($ua, 'iPhone') !== false) || (strpos($ua, 'Windows Phone') !== false)) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * sned M3U file for media player
+ */
 function sendM3u(){
     /*
     [32,
@@ -69,6 +86,9 @@ function sendM3u(){
     exit();
 }
 
+/**
+ * conver filepath to accessible url
+ */
 function convertPath($path){
     $p = str_replace(" ","%20",$path);
     $p = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$p);
@@ -76,7 +96,11 @@ function convertPath($path){
     return $p;
 }
 
+/**
+ * convert filepath to accessible gif url
+ */
 function convertGif($path){
+    /*
     $gif = str_replace("mp4","gif",$path);
     $gif = str_replace("flv","gif",$gif);
     $gif = str_replace("avi","gif",$gif);
@@ -85,6 +109,7 @@ function convertGif($path){
     $gif = "/var/smb/sdc1/video/gif/" . basename($gif);
     $base64 = "data:image/gif;base64," . base64_encode(file_get_contents($gif));
     return $base64;
+    */
     $base = basename($path);
     $gif = str_replace("mp4","gif",$base);
     $gif = str_replace("flv","gif",$gif);
@@ -96,12 +121,18 @@ function convertGif($path){
     return $p;
 }
 
+/**
+ * write file along right format
+ */
 function formatAndWrite($fh,$row){
     $path = $row['url'];
     fwrite($fh,"#EXTINF:1450," . $row["name"] . "\n");
     fwrite($fh,$path . "\n");
 }
 
+/**
+ * get DB connection(PDO)
+ */
 function getDB(){
     $dsn = 'sqlite:/home/seijiro/crawler/crawler.db';
     $user = '';
@@ -117,25 +148,32 @@ function getDB(){
     return $dbh;
 }
 
+/**
+ * modify table record 
+ */
+function convertRows($rows){
+    foreach($rows as $row){
+        $row["url"] = convertPath($row["path"]);
+        $row["gif"] = convertGif($row["path"]);
+    }
+    return $rows;
+}
+
+/**
+ * function that dispay normal page called by dispatch
+ */
 function normal(){
     global $info;
     $pdo = getDB();
-    $sql = "select * from crawler order by id desc limit 20";
+    $sql = "select * from crawler order by id desc limit 50";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
-function convertRows($rows){
-    $info = array();
-    foreach($rows as $row){
-        $row["url"] = convertPath($row["path"]);
-        $row["gif"] = convertGif($row["path"]);
-        $info[] = $row;
-    }
-    return $info;
-}
-
+/**
+ * function that search called by dispatch
+ */
 function find(){
     global $info;
     if(isset($_REQUEST["search"]) && $_REQUEST["search"] != ""){
@@ -200,7 +238,7 @@ function reload(){
 <?php foreach($info as $row) { ?>
   <tr>
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
-    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><img src="<?php echo $row['gif'] ?>" alt="gif" style="width:160px;height:90px"/><br/><?php echo $row["name"] ?></td>
+    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(!isSmartPhone()){ ?><img src="<?php echo $row['gif'] ?>" alt="gif" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
     <td><a href="<?php echo $row['url'] ?>" target="_blank">video</a></td>
   </tr>

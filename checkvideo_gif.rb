@@ -61,7 +61,7 @@ def create_gif path
   begin
     giffilename = mkgifpath path
     command_ffmpeg = "ffmpeg -ss 10 -i '#{path}' -t 2.5 -an -r 100 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}' & "
-    command_ffmpeg = "ffmpeg -ss 10 -i '#{path}' -t 2.5 -an -r 1000 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
+    command_ffmpeg = "ffmpeg -ss 90 -i '#{path}' -t 30 -an -r 100 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
     system command_ffmpeg
   rescue => ex
     p ex
