@@ -82,7 +82,7 @@ function convertGif($path){
     $gif = str_replace("avi","gif",$gif);
     $gif = str_replace("mkv","gif",$gif);
     $gif = str_replace("rmvb","gif",$gif);
-    $gif = "/var/smb/sdc1/video/tmp/" . basename($gif);
+    $gif = "/var/smb/sdc1/video/gif/" . basename($gif);
     $base64 = "data:image/gif;base64," . base64_encode(file_get_contents($gif));
     return $base64;
     $base = basename($path);
@@ -92,7 +92,7 @@ function convertGif($path){
     $gif = str_replace("mkv","gif",$gif);
     $gif = str_replace("rmvb","gif",$gif);
     $p = str_replace(" ","%20",$gif);
-    $p = "//seijiro:fuga@modeverv.aa0.netvolante.jp/video/tmp/" . $p;
+    $p = "//seijiro:fuga@modeverv.aa0.netvolante.jp/video/gif/" . $p;
     return $p;
 }
 
@@ -200,7 +200,7 @@ function reload(){
 <?php foreach($info as $row) { ?>
   <tr>
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
-    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><img src="<?php echo $row['gif'] ?>" alt="gif"/><br/><?php echo $row["name"] ?></td>
+    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><img src="<?php echo $row['gif'] ?>" alt="gif" style="width:160px;height:90px"/><br/><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
     <td><a href="<?php echo $row['url'] ?>" target="_blank">video</a></td>
   </tr>
