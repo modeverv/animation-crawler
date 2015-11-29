@@ -10,3 +10,4 @@ if [ x"$PID" != x"" ]; then
     kill -9 $PID
 fi
 bundle exec ruby -W0 checkvideo_gif.rb
+
