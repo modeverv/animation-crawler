@@ -168,7 +168,7 @@ function convertRows($rows){
 function normal(){
     global $info;
     $pdo = getDB();
-    $sql = "select * from crawler order by id desc limit 50";
+    $sql = "select * from crawler order by id desc limit 150";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -471,8 +471,8 @@ $(function(){
 <hr>
 <form>
 <div>
-  <input class="col-xs-9 col-sm-9 col-md-9 col-lg-10" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
-  <input class="btn btn-primary col-xs-3 col-sm-3 col-md-3 col-lg-2" type="submit" name="submit" value="search"/>
+  <input class="col-xs-8 col-sm-8 col-md-8 col-lg-8" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
+  <input style="margin-top:-4px" class="btn btn-primary col-xs-offset-1 col-xs-3 col-sm-offset-1 col-sm-3 col-md-offset-1 col-md-3 col-lg-offset-1 col-lg-2" type="submit" name="submit" value="search"/>
 </div>
 <div>
   <!-- <button class="btn btn-primary" type="button" onclick="reload();return false;">reload</button> -->
@@ -481,7 +481,7 @@ $(function(){
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
 </div>
 <div>
-<table id="maintable" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 table table-hover table-bordered">
+<table id="maintable" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 table table-hover table-bordered" style="margin-top:5px;">
   <tr>
     <th></th>
     <th>title</th>
