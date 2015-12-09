@@ -118,7 +118,7 @@ function convertGif($path){
     $gif = str_replace("mkv","gif",$gif);
     $gif = str_replace("rmvb","gif",$gif);
     $p = str_replace(" ","%20",$gif);
-    $p = "//seijiro:fuga@modeverv.aa0.netvolante.jp/video/gif/" . $p;
+    $p = "http://seijiro:fuga@modeverv.aa0.netvolante.jp/video/gif/" . $p;
     return $p;
 }
 
