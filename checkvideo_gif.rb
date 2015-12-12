@@ -56,6 +56,37 @@ def glob_mp42
   filelist
 end
 
+def glob_mov
+  filelist = []
+  Dir.glob("/var/smb/sdc1/video/**/*.MOV").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
+def glob_mov2
+  filelist = []
+  Dir.glob("/var/smb/sdb1/video/**/*.MOV").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
+def glob_m4v
+  filelist = []
+  Dir.glob("/var/smb/sdc1/video/**/*.m4v").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
+def glob_m4v2
+  filelist = []
+  Dir.glob("/var/smb/sdb1/video/**/*.m4v").each {|f|
+    filelist << f
+  }
+  filelist
+end
 
 def create_gif path
   begin
@@ -76,6 +107,8 @@ def mkgifpath path
   filename =  File.basename(path).gsub(/flv$/,"gif").gsub(/mp4$/,"gif")
   filename =  filename.gsub(/mkv$/,"gif").gsub(/avi$/,"gif")
   filename =  filename.gsub(/rmvb$/,"gif")
+  filename =  filename.gsub(/MOV$/,"gif")
+  filename =  filename.gsub(/m4v$/,"gif")
   # gifpath = "/var/smb/sdc1/video/tmp/" + filename
   # command = "rm -f '#{gifpath}' "
   # puts command
@@ -86,7 +119,7 @@ end
 #---------------
 # main
 
-filelist = glob_flv + glob_mp4 + glob_mkv + glob_avi + glob_rmvb + glob_flv2 + glob_mp42
+filelist = glob_flv2 + glob_mp42 + glob_flv + glob_mp4 + glob_mkv + glob_avi + glob_rmvb + glob_mov + glob_mov2 + glob_m4v + glob_m4v2
 
 filelist.sort.each{|path|
   create_gif path unless gifexists? path

@@ -159,7 +159,7 @@ SQL
           end
           if title
             # puts title + "-" + href if @debug
-            title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+            title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
             if @title[title]
               #do nothing
               # puts "skip:" + title
@@ -215,7 +215,7 @@ SQL
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value
-            .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+            .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
         puts value[:title] + "-" + episode + "-" + href
         # unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
         unless episode =~ /アニメPV集/ 

@@ -25,7 +25,7 @@ SQL
   db = SQLite3::Database.new(SQLITEFILE)
   db.execute sql,{ :name => (File.basename path) ,:path => path }
   db.close
-  puts "insert #{path}"
+  puts "insert #{path} - #{File::mtime(path)} "
 end
 
 def exists? path
@@ -94,13 +94,45 @@ def glob_mp42
   filelist
 end
 
+def glob_mov
+  filelist = []
+  Dir.glob("/var/smb/sdc1/video/**/*.MOV").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
+def glob_mov2
+  filelist = []
+  Dir.glob("/var/smb/sdb1/video/**/*.MOV").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
+def glob_m4v
+  filelist = []
+  Dir.glob("/var/smb/sdc1/video/**/*.m4v").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
+def glob_m4v2
+  filelist = []
+  Dir.glob("/var/smb/sdb1/video/**/*.m4v").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
 #---------------
 # main
 
 create_db
 
-filelist = glob_flv2 + glob_mp42 + glob_flv + glob_mp4 + glob_mkv + glob_avi + glob_rmvb
+filelist = glob_flv2 + glob_mp42 + glob_flv + glob_mp4 + glob_mkv + glob_avi + glob_rmvb + glob_mov + glob_mov2 + glob_m4v + glob_m4v2
 
-filelist.sort.each{|f|
+filelist.sort_by{ |f| File::mtime(f) }.each{|f|
   insert f unless exists? f
 }

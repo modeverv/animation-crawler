@@ -13,8 +13,10 @@ switch (true) {
 }
 
 $info; // contains data which used for display
+$dirs = array(); // contains directory data used for display
 
 dispatch();
+videoglob();
 
 /**
  * dispatcher
@@ -188,6 +190,39 @@ function find(){
      }else{
         normal();
     }
+}
+
+/**
+ * 検索用のリンクを作成する
+ */
+function makeSearchLink($dirname){
+    $name = basename($dirname);
+    $name = htmlspecialchars($name);
+    $time = date("Y-m-d",filemtime($dirname));
+    return "<a href=\"anime.php?submit=search&search=". $name . "\">" . $name . " - " . $time . "</a>";
+}
+/**
+ * videoをglobする
+ */
+function videoglob(){
+    global $dirs;
+    foreach(glob("/var/smb/sdb1/video/*") as $entry){
+        $dirs[] = $entry;
+    }
+    foreach(glob("/var/smb/sdc1/video/*") as $entry){
+        if($entry == "/var/smb/sdc1/video/gif"){
+            continue;
+        }
+        $dirs[] = $entry;
+    }
+    /** 日付降順 */
+    function compare($a,$b){
+        if(filemtime($a) == filemtime($b)){
+            return 0;
+        }
+        return (filemtime($a) < filemtime($b)) ? 1 : -1;
+    }
+    usort($dirs,'compare');
 }
 ?>
 <!DOCTYPE html>
@@ -467,20 +502,33 @@ $(function(){
 </head>
 <body>
 <div class="container">
+<div class="row">
 <h1>crawler m3u creater</h1>
 <hr>
+</div>
+<div id="dirs" style="border:1px solid;display:none;width:50%;z-index:10;position:absolute;top:0px;left:0px;background:#fff;">
+  <button class="btn btn-primary pull-right" type="button" onclick="$('#dirs').toggle();">X</button>
+  <h2>作品リスト</h2>
+  <ul style="pull-left;list-style:none;padding-left:10px;">
+  <?php foreach($dirs as $dirname){?>
+    <li><?php echo makeSearchLink($dirname); ?></li>                              
+  <?php }?>
+  </ul>
+</div>
+
 <form>
-<div>
+<div class="row">
   <input class="col-xs-8 col-sm-8 col-md-8 col-lg-8" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
   <input style="margin-top:-4px" class="btn btn-primary col-xs-offset-1 col-xs-3 col-sm-offset-1 col-sm-3 col-md-offset-1 col-md-3 col-lg-offset-1 col-lg-2" type="submit" name="submit" value="search"/>
 </div>
-<div>
+<div class="row">
   <!-- <button class="btn btn-primary" type="button" onclick="reload();return false;">reload</button> -->
   <!-- <button class="btn btn-primary" type="button" onclick="uncheck();return false;">uncheck all</button>-->
   <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
+  <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
 </div>
-<div>
+<div class="row">
 <table id="maintable" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 table table-hover table-bordered" style="margin-top:5px;">
   <tr>
     <th></th>
