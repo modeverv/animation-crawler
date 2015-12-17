@@ -2,6 +2,7 @@
 error_reporting(0);
 setlocale(LC_ALL, "ja_JP.utf8");
 
+/* disable file base basic auth
 // basic auth
 switch (true) {
     case !isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']):
@@ -11,6 +12,7 @@ switch (true) {
         header('Content-Type: text/plain; charset=utf-8');
         die('need login');
 }
+*/
 
 $info; // contains data which used for display
 $dirs = array(); // contains directory data used for display
