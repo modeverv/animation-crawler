@@ -13,7 +13,7 @@ switch (true) {
         die('need login');
 }
 */
-
+$per_page = 20;
 $info; // contains data which used for display
 $dirs = array(); // contains directory data used for display
 
@@ -31,6 +31,9 @@ function dispatch(){
         }
         if($kind == "search"){
             find();
+        }
+        if($kind == "more"){
+            more();
         }
     }else{
         normal();
@@ -170,9 +173,9 @@ function convertRows($rows){
  * function that dispay normal page called by dispatch
  */
 function normal(){
-    global $info;
+    global $info,$per_page;
     $pdo = getDB();
-    $sql = "select * from crawler order by id desc limit 150";
+    $sql = "select * from crawler order by id desc limit " . $per_page;
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -193,6 +196,23 @@ function find(){
         normal();
     }
 }
+
+/**
+ * function that return more page called by dispatch
+ */
+function more(){
+    global $per_page;
+    $skip = htmlspecialchars($_REQUEST["page"]) * $per_page;
+    $pdo = getDB();
+    $sql = "select * from crawler order by id desc limit " . $per_page . " offset " . $skip;
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    $result = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+    header("Content-Type: application/json; charset=utf-8");
+    echo json_encode($result);
+    exit;
+}
+
 
 /**
  * 検索用のリンクを作成する
@@ -239,6 +259,13 @@ function videoglob(){
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <style>
 .lazy { border-radius:5px; }
+th,td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+td.left {
+  text-align: left !important;
+}
 </style>
 <script>
 /*!
@@ -500,6 +527,45 @@ function reload(){
 $(function(){
     $("img.lazy").lazyload({effect : "fadeIn"});
 });
+
+var page = 1;
+function getMore(){
+    $.ajax({
+        data : {"page" : page,"submit" : "more" },
+        dataType : "json"
+    }).done(function(json){
+        var tablehtml = [];
+        for( var i=0,l=json.length; i<l; i++ ){
+            var elem = json[i];
+            var html = $('#my-template').text()
+                       .replace(/\{id\}/gm,elem.id)
+                       .replace(/\{name\}/gm,elem.name)
+                       .replace(/\{gif\}/gm,elem.gif)
+                       .replace(/\{url\}/gm,elem.url)
+                       .replace(/\{created_at\}/gm,elem.created_at);
+            tablehtml.push(html);
+        }
+        $("#maintable tbody").append(tablehtml.join(""));
+        $("img.lazy").lazyload({effect : "fadeIn"});
+        page++;
+    });
+}
+
+$(function(){
+    // event 
+    $("#more").on("click",getMore);
+})
+</script>
+<script type="text/template" id="my-template">
+  <tr>
+    <td onclick="prop(this)" data-value="chk{id}"><input class="chk" id="chk{id}" type="checkbox" name="ids[]" value="{id}"/></td>
+    <td class="left" onclick="prop(this)" data-value="chk{id}">
+         <img data-original="{gif}" alt="gif" class="lazy" style="width:160px;height:90px"/><br/>
+         {name}
+    </td>
+    <td onclick="prop(this)" data-value="chk{id}">{created_at}</td>
+    <td><a href="{url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+  </tr>
 </script>
 </head>
 <body>
@@ -541,12 +607,15 @@ $(function(){
 <?php foreach($info as $row) { ?>
   <tr>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
-    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(!isSmartPhone()){ ?><img data-original="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
+    <td class="left" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(!isSmartPhone()){ ?><img data-original="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
-    <td><a href="<?php echo $row['url'] ?>" target="_blank">video</a></td>
+    <td><a href="<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 <?php }?>
 </table>
+</div>
+<div style="text-align:center">
+  <a href="javascript:void(0)" id="more">more</a>
 </div>
 </form>
 </div>
