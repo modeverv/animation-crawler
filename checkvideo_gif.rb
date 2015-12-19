@@ -1,99 +1,27 @@
 #! /usr/bin/env ruby
+# -*- coding: utf-8 -*-
 
-def glob_flv
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.flv").each {|f|
-    filelist << f
-  }
-  filelist
-end
+require 'sqlite3'
 
-def glob_mp4
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.mp4").each {|f|
-    filelist << f
-  }
-  filelist
-end
+SQLITEFILE = "/home/seijiro/crawler/crawler.db"
 
-def glob_mkv
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.mkv").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_avi
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.avi").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_rmvb
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.rmvb").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_flv2
-  filelist = []
-  Dir.glob("/var/smb/sdc1/video/**/*.flv").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_mp42
-  filelist = []
-  Dir.glob("/var/smb/sdc1/video/**/*.mp4").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_mov
-  filelist = []
-  Dir.glob("/var/smb/sdc1/video/**/*.MOV").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_mov2
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.MOV").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_m4v
-  filelist = []
-  Dir.glob("/var/smb/sdc1/video/**/*.m4v").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
-def glob_m4v2
-  filelist = []
-  Dir.glob("/var/smb/sdb1/video/**/*.m4v").each {|f|
-    filelist << f
-  }
-  filelist
-end
-
+# @see http://takuya-1st.hatenablog.jp/entry/2015/07/15/002701
 def create_gif path
   begin
     giffilename = mkgifpath path
-    command_ffmpeg = "ffmpeg -ss 10 -i '#{path}' -t 2.5 -an -r 100 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}' & "
-    command_ffmpeg = "ffmpeg -ss 90 -i '#{path}' -t 30 -an -r 100 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
-    system command_ffmpeg
+    command_0 = "rm -f /var/smb/sdc1/video/gif/tmp/* && rm -f /var/smb/sdc1/video/gif/tmp/.*"
+    command_1 = "ffmpeg -t 120 -i '#{path}' -an -r 1 -s 160x90 -pix_fmt rgb24 /var/smb/sdc1/video/gif/tmp/%010d.png"
+    ##command_1 = "ffmpeg -t 120 -i '#{path}' -an -r 1 -pix_fmt rgb24 /var/smb/sdc1/video/gif/tmp/%010d.png"
+    command_2 = "find /var/smb/sdc1/video/gif/tmp/ -type f -name '*.png' | xargs -P0 -I@ mogrify -resize 160x90 @ "
+    command_3 = "convert /var/smb/sdc1/video/gif/tmp/*.png '#{giffilename}' "
+    command_4 = "rm -f /var/smb/sdc1/video/gif/tmp/* && rm -f /var/smb/sdc1/video/gif/tmp/.*"
+    system command_0
+    system command_1
+    ##system command_2
+    system command_3
+    system command_4
+    #command_ffmpeg = "ffmpeg -ss 9 -i '#{path}' -t 30 -an -r 100 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
+    #system command_ffmpeg 
   rescue => ex
     p ex
   end
@@ -104,11 +32,11 @@ def gifexists? path
 end
 
 def mkgifpath path
-  filename =  File.basename(path).gsub(/flv$/,"gif").gsub(/mp4$/,"gif")
-  filename =  filename.gsub(/mkv$/,"gif").gsub(/avi$/,"gif")
-  filename =  filename.gsub(/rmvb$/,"gif")
-  filename =  filename.gsub(/MOV$/,"gif")
-  filename =  filename.gsub(/m4v$/,"gif")
+  filename =  File.basename(path).gsub(/flv$/i,"gif").gsub(/mp4$/i,"gif")
+  filename =  filename.gsub(/mkv$/i,"gif").gsub(/avi$/i,"gif")
+  filename =  filename.gsub(/rmvb$/i,"gif")
+  filename =  filename.gsub(/MOV$/i,"gif")
+  filename =  filename.gsub(/m4v$/i,"gif")
   # gifpath = "/var/smb/sdc1/video/tmp/" + filename
   # command = "rm -f '#{gifpath}' "
   # puts command
@@ -116,12 +44,20 @@ def mkgifpath path
   return "/var/smb/sdc1/video/gif/" + filename
 end
 
+def get_list
+  sql =<<-SQL
+select path from crawler
+SQL
+  db = SQLite3::Database.new(SQLITEFILE)
+  result = db.execute sql
+  db.close
+  result.map{|e| e[0] }
+end
+
 #---------------
 # main
 
-filelist = glob_flv2 + glob_mp42 + glob_flv + glob_mp4 + glob_mkv + glob_avi + glob_rmvb + glob_mov + glob_mov2 + glob_m4v + glob_m4v2
-
-filelist.sort.each{|path|
+get_list.sort.each{|path|
   create_gif path unless gifexists? path
 }
 

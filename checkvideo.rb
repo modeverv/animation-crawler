@@ -62,6 +62,14 @@ def glob_mkv
   filelist
 end
 
+def glob_mkv2
+  filelist = []
+  Dir.glob("/var/smb/sdc1/video/**/*.mkv").each {|f|
+    filelist << f
+  }
+  filelist
+end
+
 def glob_avi
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.avi").each {|f|
@@ -131,7 +139,7 @@ end
 
 create_db
 
-filelist = glob_flv2 + glob_mp42 + glob_flv + glob_mp4 + glob_mkv + glob_avi + glob_rmvb + glob_mov + glob_mov2 + glob_m4v + glob_m4v2
+filelist = glob_flv2 + glob_mp42 + glob_flv + glob_mp4 + glob_mkv + glob_mkv2 + glob_avi + glob_rmvb + glob_mov + glob_mov2 + glob_m4v + glob_m4v2 
 
 filelist.sort_by{ |f| File::mtime(f) }.each{|f|
   insert f unless exists? f
