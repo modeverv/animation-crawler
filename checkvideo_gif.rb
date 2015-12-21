@@ -20,15 +20,16 @@ def create_gif path
     ##system command_2
     system command_3
     system command_4
-    #command_ffmpeg = "ffmpeg -ss 9 -i '#{path}' -t 30 -an -r 100 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
-    #system command_ffmpeg 
+    # command_ffmpeg = "ffmpeg -n -ss 0 -i '#{path}' -t 12 -an -r 1 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
+    # system command_ffmpeg 
   rescue => ex
     p ex
   end
 end
 
 def gifexists? path
-  return File.exists? (mkgifpath path)
+  gifpath = mkgifpath(path)
+  return File.exists?(gifpath) # && File.size(gifpath) > 1000
 end
 
 def mkgifpath path
@@ -46,18 +47,19 @@ end
 
 def get_list
   sql =<<-SQL
-select path from crawler
+select id,path from crawler order by id desc
 SQL
   db = SQLite3::Database.new(SQLITEFILE)
   result = db.execute sql
   db.close
-  result.map{|e| e[0] }
+  result.map{|e| e[1] }
 end
 
 #---------------
 # main
 
 get_list.sort.each{|path|
+  # puts path
   create_gif path unless gifexists? path
 }
 

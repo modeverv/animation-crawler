@@ -266,6 +266,16 @@ th,td {
 td.left {
   text-align: left !important;
 }
+#control {
+  background:#fff;
+  padding-bottom:20px;
+}
+#table {
+  margin-top: 180px;
+}
+#dirs {
+  margin-top:190px;
+}
 </style>
 <script>
 /*!
@@ -569,11 +579,30 @@ $(function(){
 </script>
 </head>
 <body>
+<nav id="control" class="navbar navbar-fixed-top" role="navigation">
 <div class="container">
 <div class="row">
 <h1>crawler m3u creater</h1>
 <hr>
 </div>
+<form>
+<div class="row">
+  <input class="col-xs-8 col-sm-8 col-md-8 col-lg-8" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
+  <input style="margin-top:-4px" class="btn btn-primary col-xs-offset-1 col-xs-3 col-sm-offset-1 col-sm-3 col-md-offset-1 col-md-3 col-lg-offset-1 col-lg-2" type="submit" name="submit" value="search"/>
+</div>
+<div class="row" >
+  <!-- <button class="btn btn-primary" type="button" onclick="reload();return false;">reload</button> -->
+  <!-- <button class="btn btn-primary" type="button" onclick="uncheck();return false;">uncheck all</button>-->
+  <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
+  <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
+  <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
+  <?php if( !(isset($_REQUEST["search"]) && $_REQUEST["search"] != "") ) { ?>
+  <button class="btn btn-primary" type="button" id="more">more</button>
+  <?php } ?>
+</div>
+</nav>
+<div class="container">
+<div class="row" id="table">
 <div id="dirs" style="border:1px solid;display:none;width:50%;z-index:10;position:absolute;top:0px;left:0px;background:#fff;">
   <button class="btn btn-primary pull-right" type="button" onclick="$('#dirs').toggle();">X</button>
   <h2>作品リスト</h2>
@@ -583,20 +612,6 @@ $(function(){
   <?php }?>
   </ul>
 </div>
-
-<form>
-<div class="row">
-  <input class="col-xs-8 col-sm-8 col-md-8 col-lg-8" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
-  <input style="margin-top:-4px" class="btn btn-primary col-xs-offset-1 col-xs-3 col-sm-offset-1 col-sm-3 col-md-offset-1 col-md-3 col-lg-offset-1 col-lg-2" type="submit" name="submit" value="search"/>
-</div>
-<div class="row">
-  <!-- <button class="btn btn-primary" type="button" onclick="reload();return false;">reload</button> -->
-  <!-- <button class="btn btn-primary" type="button" onclick="uncheck();return false;">uncheck all</button>-->
-  <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
-  <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
-  <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
-</div>
-<div class="row">
 <table id="maintable" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 table table-hover table-bordered" style="margin-top:5px;">
   <tr>
     <th></th>
@@ -613,9 +628,6 @@ $(function(){
   </tr>
 <?php }?>
 </table>
-</div>
-<div style="text-align:center">
-  <a href="javascript:void(0)" id="more">more</a>
 </div>
 </form>
 </div>
