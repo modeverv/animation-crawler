@@ -86,9 +86,9 @@ function sendM3u(){
         formatAndWrite($fh,$row);
     }
     fclose($fh);
-    header('Content-Type:application/octet-stream');  //ダウンロードの指示
-    header('Content-Disposition:filename=anime.m3u');  //ダウンロードするファイル名
-    header('Content-Length:' . filesize($filename));   //ファイルサイズを指定
+    header('Content-Type:application/octet-stream');  
+    header('Content-Disposition:filename=playlist.m3u'); 
+    header('Content-Length:' . filesize($filename));  
     readfile($filename);
     unlink($filename);
     exit();
@@ -99,8 +99,8 @@ function sendM3u(){
  */
 function convertPath($path){
     $p = str_replace(" ","%20",$path);
-    $p = str_replace("/var/smb/sdc1/","http://seijiro:fuga@modeverv.aa0.netvolante.jp/",$p);
-    $p = str_replace("/var/smb/sdb1/video","http://seijiro:fuga@modeverv.aa0.netvolante.jp/video2",$p);
+    $p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@modeverv.aa0.netvolante.jp/",$p);
+    $p = str_replace("/var/smb/sdb1/video","https://seijiro:fuga@modeverv.aa0.netvolante.jp/video2",$p);
     return $p;
 }
 
@@ -125,7 +125,7 @@ function convertGif($path){
     $gif = str_replace("mkv","gif",$gif);
     $gif = str_replace("rmvb","gif",$gif);
     $p = str_replace(" ","%20",$gif);
-    $p = "http://seijiro:fuga@modeverv.aa0.netvolante.jp/video/gif/" . $p;
+    $p = "//seijiro:fuga@modeverv.aa0.netvolante.jp/video/gif/" . $p;
     return $p;
 }
 
@@ -215,16 +215,16 @@ function more(){
 
 
 /**
- * 検索用のリンクを作成する
+ * make link for search
  */
 function makeSearchLink($dirname){
     $name = basename($dirname);
     $name = htmlspecialchars($name);
     $time = date("Y-m-d",filemtime($dirname));
-    return "<a href=\"anime.php?submit=search&search=". $name . "\">" . $name . " - " . $time . "</a>";
+    return "<a href=\"anime.php?submit=search&search=". $dirname . "\">" . $name . " - " . $time . "</a>";
 }
 /**
- * videoをglobする
+ * glob video directory
  */
 function videoglob(){
     global $dirs;
@@ -235,9 +235,15 @@ function videoglob(){
         if($entry == "/var/smb/sdc1/video/gif"){
             continue;
         }
+        if($entry == "/var/smb/sdc1/video/0m3u"){
+            continue;
+        }
+        if($entry == "/var/smb/sdc1/video/0log"){
+            continue;
+        }
         $dirs[] = $entry;
     }
-    /** 日付降順 */
+    /** sort by date desc */
     function compare($a,$b){
         if(filemtime($a) == filemtime($b)){
             return 0;
@@ -596,9 +602,6 @@ $(function(){
   <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
   <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
-  <?php if( !(isset($_REQUEST["search"]) && $_REQUEST["search"] != "") ) { ?>
-  <button class="btn btn-primary" type="button" id="more">more</button>
-  <?php } ?>
 </div>
 </nav>
 <div class="container">
@@ -628,6 +631,13 @@ $(function(){
   </tr>
 <?php }?>
 </table>
+
+<?php if( !(isset($_REQUEST["search"]) && $_REQUEST["search"] != "") ) { ?>
+<div style="margin-bottom:100px;text-align:center;">
+  <a href="javascript:void(0)"><h2 class="" type="button" id="more">more</h2></a>
+</div>
+<?php } ?>
+
 </div>
 </form>
 </div>
