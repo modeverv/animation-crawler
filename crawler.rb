@@ -133,7 +133,9 @@ SQL
     req.callback do
       page = Nokogiri::HTML(req.response)
       page.css(".Top_info div ul li a").each {|a|
-        if a.attributes['title']  && a.attributes['title'].value =~ /更新状況/
+        if a.attributes['title'] && a.attributes['title'].value =~ /更新状況/
+          puts "更新状況:" + a.attributes['title']
+          CrawlerLOGGER.info "更新状況" + a.attributes['title']
           @queue.push({kind: JOB_KOUSINPAGE, value: a.attributes['href'].value })
         end
       }
@@ -144,6 +146,7 @@ SQL
   # anisoku kousin
   def anisokukousin url
     # puts "anisokukousin : " + url
+    # CrawlerLOGGER.info "anisokukousin : " + url
     req = EM::HttpRequest.new(url,:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
@@ -153,11 +156,16 @@ SQL
       page.css("a").each { |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
-        if href =~ /^http\:\/\/youtubeanisoku1\.blog106\.fc2\.com\/blog-entry-....\.html$/
+        if href =~ /^http\:\/\/youtubeanisoku1\.blog106\.fc2\.com\/blog-entry-.+?\.html$/
           if a.attributes["title"]
             title = a.attributes["title"].value
           end
-          if title
+          
+          unless title
+            title = a.text
+          end
+          
+          if title =~ /^.+$/
             # puts title + "-" + href if @debug
             title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
             if @title[title]
@@ -167,6 +175,7 @@ SQL
               #if title =~ /落第/ || title =~ /学園/ 
                 @title[title] = true
                 puts "do:" + title
+                CrawlerLOGGER.info "do:" + title 
                 @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
               #end
             end
@@ -186,6 +195,14 @@ SQL
 
     req.callback do
       page = Nokogiri::HTML(req.response)
+
+      t = page.title.gsub(" ★ You Tube アニ速 ★","").strip
+      t = t.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+
+      if t
+        value[:title] = t
+      end
+          
       page.css("a").each { |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
@@ -214,8 +231,7 @@ SQL
       page.css(".title a[rel='bookmark']").each { |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
-        episode = a.attributes["title"].value
-            .gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+        episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
         puts value[:title] + "-" + episode + "-" + href
         # unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
         unless episode =~ /アニメPV集/ 
@@ -235,6 +251,13 @@ SQL
     fetched = false
 
     value.each { |val|
+
+      # if val[:title] =~ /マクロス/
+      #   puts "#" * 80
+      #   p val
+      #   puts "#" * 80
+      # end
+
       path = mkfilepath val[:title],val[:episode]
       if path =~ /\[720p\]/
       #  return
