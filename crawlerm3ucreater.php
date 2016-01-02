@@ -82,7 +82,11 @@ function sendM3u(){
         $stmt->execute(array(":id" => $id));
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $row = $results[0];
-        $row["url"] = convertPath($row["path"]);
+        if($_REQUEST["deliverymode"] == "smb"){
+            $row["url"] = convertPathSMB($row["path"]);
+        }else{
+            $row["url"] = convertPath($row["path"]);
+        }
         formatAndWrite($fh,$row);
     }
     fclose($fh);
@@ -95,12 +99,20 @@ function sendM3u(){
 }
 
 /**
- * conver filepath to accessible url
+ * convert filepath to accessible url
  */
 function convertPath($path){
     $p = str_replace(" ","%20",$path);
     $p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@modeverv.aa0.netvolante.jp/",$p);
     $p = str_replace("/var/smb/sdb1/video","https://seijiro:fuga@modeverv.aa0.netvolante.jp/video2",$p);
+    return $p;
+}
+
+/**
+ * convert filepath to smb filepath
+ */
+function convertPathSMB($path){
+    $p = str_replace("/var","/Volumes",$path);
     return $p;
 }
 
@@ -602,6 +614,9 @@ $(function(){
   <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
   <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
+  <label for="deliverymode">delivery mode</label>
+  <label><input type="radio" name="deliverymode" value="http" checked/>http</label>
+  <label><input type="radio" name="deliverymode" value="smb"/>smb</label>
 </div>
 </nav>
 <div class="container">

@@ -30,10 +30,10 @@ end
 
 def exists? path
   sql =<<-SQL
-select * from crawler where name like :name
+select * from crawler where path like :path
 SQL
   db = SQLite3::Database.new(SQLITEFILE)
-  result = db.execute sql,{ :name =>  "%" + (File.basename path) + "%" }
+  result = db.execute sql,{ :path =>  "%" + path + "%" }
   db.close
   return result.size != 0
 end
