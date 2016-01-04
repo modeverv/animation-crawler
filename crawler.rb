@@ -153,37 +153,47 @@ SQL
 
     req.callback do
       page = Nokogiri::HTML(req.response)
-      page.css("a").each { |a|
-        href = ""
-        href = a.attributes["href"].value unless a.attributes["href"].nil?
-        if href =~ /^http\:\/\/youtubeanisoku1\.blog106\.fc2\.com\/blog-entry-.+?\.html$/
-          if a.attributes["title"]
-            title = a.attributes["title"].value
-          end
-          
-          unless title
-            title = a.text
-          end
-          
-          if title =~ /^.+$/
-            # puts title + "-" + href if @debug
-            title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
-            if @title[title]
-              #do nothing
-              # puts "skip:" + title
-            else
-              #if title =~ /落第/ || title =~ /学園/ 
-                @title[title] = true
-                puts "do:" + title
-                CrawlerLOGGER.info "do:" + title 
-                @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
-              #end
-            end
-          end
+      require 'pp'
+      page.css("ul").each{|ul|
+        if ul.attributes["type"] && ul.attributes["type"].value == "square"
+          ul2job ul
         end
       }
       @fetching -= 1
     end
+  end
+  
+  # ul to job 
+  def ul2job ul
+    ul.css("li a").each{|a|
+      href = ""
+      href = a.attributes["href"].value unless a.attributes["href"].nil?
+      if href =~ /^http\:\/\/youtubeanisoku1\.blog106\.fc2\.com\/blog-entry-.+?\.html$/
+        if a.attributes["title"]
+          title = a.attributes["title"].value
+        end
+        
+        unless title
+          title = a.text
+        end
+        
+        if title =~ /^.+$/
+          # puts title + "-" + href if @debug
+          title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+          if @title[title]
+            #do nothing
+            # puts "skip:" + title
+          else
+            #if title =~ /落第/ || title =~ /学園/ 
+            @title[title] = true
+            puts "do:" + title
+            CrawlerLOGGER.info "do:" + title 
+            @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
+            #end
+          end
+        end
+      end
+    }
   end
 
   # anisoku kobetu
