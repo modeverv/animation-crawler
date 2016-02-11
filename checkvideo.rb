@@ -39,6 +39,7 @@ SQL
 end
 
 def glob_flv
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.flv").each {|f|
     filelist << f
@@ -47,6 +48,7 @@ def glob_flv
 end
 
 def glob_mp4
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.mp4").each {|f|
     filelist << f
@@ -55,6 +57,7 @@ def glob_mp4
 end
 
 def glob_mkv
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.mkv").each {|f|
     filelist << f
@@ -63,6 +66,7 @@ def glob_mkv
 end
 
 def glob_mkv2
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdc1/video/**/*.mkv").each {|f|
     filelist << f
@@ -71,6 +75,7 @@ def glob_mkv2
 end
 
 def glob_avi
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.avi").each {|f|
     filelist << f
@@ -79,6 +84,7 @@ def glob_avi
 end
 
 def glob_rmvb
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.rmvb").each {|f|
     filelist << f
@@ -87,6 +93,7 @@ def glob_rmvb
 end
 
 def glob_flv2
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdc1/video/**/*.flv").each {|f|
     filelist << f
@@ -95,6 +102,7 @@ def glob_flv2
 end
 
 def glob_mp42
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdc1/video/**/*.mp4").each {|f|
     filelist << f
@@ -103,6 +111,7 @@ def glob_mp42
 end
 
 def glob_mov
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdc1/video/**/*.MOV").each {|f|
     filelist << f
@@ -111,6 +120,7 @@ def glob_mov
 end
 
 def glob_mov2
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.MOV").each {|f|
     filelist << f
@@ -119,6 +129,7 @@ def glob_mov2
 end
 
 def glob_m4v
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdc1/video/**/*.m4v").each {|f|
     filelist << f
@@ -127,6 +138,7 @@ def glob_m4v
 end
 
 def glob_m4v2
+  puts __method__
   filelist = []
   Dir.glob("/var/smb/sdb1/video/**/*.m4v").each {|f|
     filelist << f
@@ -139,8 +151,9 @@ end
 
 create_db
 
-filelist = glob_flv2 + glob_mp42 + glob_flv + glob_mp4 + glob_mkv + glob_mkv2 + glob_avi + glob_rmvb + glob_mov + glob_mov2 + glob_m4v + glob_m4v2 
-
-filelist.sort_by{ |f| File::mtime(f) }.each{|f|
-  insert f unless exists? f
-}
+filelists = [glob_flv2 , glob_mp42 , glob_flv , glob_mp4 , glob_mkv , glob_mkv2 , glob_avi , glob_rmvb , glob_mov , glob_mov2 , glob_m4v , glob_m4v2 ]
+filelists.each do |filelist|
+  filelist.sort_by{ |f| File::mtime(f) }.each{|f|
+    insert f unless exists? f
+  }
+end

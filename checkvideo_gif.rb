@@ -9,19 +9,19 @@ SQLITEFILE = "/home/seijiro/crawler/crawler.db"
 def create_gif path
   begin
     giffilename = mkgifpath path
-    command_0 = "rm -f /var/smb/sdc1/video/gif/tmp/* && rm -f /var/smb/sdc1/video/gif/tmp/.*"
-    command_1 = "ffmpeg -t 120 -i '#{path}' -an -r 1 -s 160x90 -pix_fmt rgb24 /var/smb/sdc1/video/gif/tmp/%010d.png"
-    ##command_1 = "ffmpeg -t 120 -i '#{path}' -an -r 1 -pix_fmt rgb24 /var/smb/sdc1/video/gif/tmp/%010d.png"
-    command_2 = "find /var/smb/sdc1/video/gif/tmp/ -type f -name '*.png' | xargs -P0 -I@ mogrify -resize 160x90 @ "
-    command_3 = "convert /var/smb/sdc1/video/gif/tmp/*.png '#{giffilename}' "
-    command_4 = "rm -f /var/smb/sdc1/video/gif/tmp/* && rm -f /var/smb/sdc1/video/gif/tmp/.*"
-    system command_0
-    system command_1
-    ##system command_2
-    system command_3
-    system command_4
-    # command_ffmpeg = "ffmpeg -n -ss 0 -i '#{path}' -t 12 -an -r 1 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
-    # system command_ffmpeg 
+    #  command_0 = "rm -f /var/smb/sdc1/video/gif/tmp/* && rm -f /var/smb/sdc1/video/gif/tmp/.*"
+    #  command_1 = "ffmpeg -t 120 -i '#{path}' -an -r 1 -s 160x90 -pix_fmt rgb24 /var/smb/sdc1/video/gif/tmp/%010d.png"
+    #  ##command_1 = "ffmpeg -t 120 -i '#{path}' -an -r 1 -pix_fmt rgb24 /var/smb/sdc1/video/gif/tmp/%010d.png"
+    #  command_2 = "find /var/smb/sdc1/video/gif/tmp/ -type f -name '*.png' | xargs -P0 -I@ mogrify -resize 160x90 @ "
+    #  command_3 = "convert /var/smb/sdc1/video/gif/tmp/*.png '#{giffilename}' "
+    #  command_4 = "rm -f /var/smb/sdc1/video/gif/tmp/* && rm -f /var/smb/sdc1/video/gif/tmp/.*"
+    #  system command_0
+    #  system command_1
+    #  ##system command_2
+    #  system command_3
+    #  system command_4
+    command_ffmpeg = "ffmpeg -n -ss 0 -i '#{path}' -t 10 -an -r 1 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
+    system command_ffmpeg 
   rescue => ex
     p ex
   end
@@ -58,7 +58,7 @@ end
 #---------------
 # main
 
-get_list.sort.each{|path|
+get_list.each{|path|
   # puts path
   create_gif path unless gifexists? path
 }

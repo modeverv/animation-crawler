@@ -40,6 +40,10 @@ function dispatch(){
     }
 }
 
+function getFileSizeMBStr($filepath){
+   return round(filesize($filepath) / pow(1024, 2))  . "MB";
+}
+
 /**
  * @return is smartphone or not. when smartphone, return true;
  */
@@ -174,6 +178,7 @@ function getDB(){
 function convertRows($rows){
     $info = array();
     foreach($rows as $row){
+        $row["name"] = $row["name"] . " - " .getFileSizeMBStr($row["path"]);
         $row["url"] = convertPath($row["path"]);
         $row["gif"] = convertGif($row["path"]);
         $info[] = $row;
@@ -214,8 +219,10 @@ function find(){
  */
 function more(){
     global $per_page;
-    $skip = htmlspecialchars($_REQUEST["page"]) * $per_page;
+    $page = htmlspecialchars($_REQUEST["page"]);
+    $skip = (int)$page * $per_page;
     $pdo = getDB();
+    error_log("per_page:" . $per_page . " skip:" . $skip . " page:" . $page);
     $sql = "select * from crawler order by id desc limit " . $per_page . " offset " . $skip;
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
@@ -552,12 +559,25 @@ function prop(elem){
 function reload(){
     location.reload(true);
 }
-$(function(){
-   $("img.lazy").lazyload({effect : "fadeIn"});
-});
+
+function isMoreExist(){
+  if($("#more")[0]){
+    return true;
+  }else{
+    return false;
+  }
+}
 
 var page = 1;
+var nowGetting = false;
 function getMore(){
+    if(! isMoreExist()){
+      return;
+    }
+    if(nowGetting){
+      return;
+    }
+    nowGetting = true;
     $.ajax({
         data : {"page" : page,"submit" : "more" },
         dataType : "json"
@@ -570,25 +590,38 @@ function getMore(){
                        .replace(/\{name\}/gm,elem.name)
                        .replace(/\{gif\}/gm,elem.gif)
                        .replace(/\{url\}/gm,elem.url)
-                       .replace(/\{created_at\}/gm,elem.created_at);
+                       .replace(/\{created_at\}/gm,elem.created_at)
+                       .replace(/\{page\}/gm,page);
             tablehtmls.push(html);
         }
         $("#maintable tbody").append(tablehtmls.join(""));
-        $("img.lazy").lazyload({effect : "fadeIn"});
+        $("#maintable img.lazy-" + page).lazyload({effect : "fadeIn"});
         page++;
+        nowGetting = false;
     });
 }
 
+// init
 $(function(){
-    // event 
-    $("#more").on("click",getMore);
-})
+   var $window = $(window);
+   $("#maintable img.lazy").lazyload({effect : "fadeIn"});
+   var magicNumber = 3000;
+   $(window).on('scroll resize', function(event){
+      var scrollTop = $window.scrollTop();
+      var height = $(document).height() - magicNumber;
+      if (scrollTop >= height) {
+        getMore();
+      }
+   });
+});
 </script>
 <script type="text/template" id="my-template">
   <tr>
     <td><input class="chk" id="chk{id}" type="checkbox" name="ids[]" value="{id}"/><br/>{id}</td>
     <td class="left" onclick="prop(this)" data-value="chk{id}">
-         <img data-original="{gif}" alt="gif" class="lazy" style="width:160px;height:90px"/><br/>
+         <?php if( ! isSmartPhone() ) { ?>
+         <img data-original="{gif}" alt="gif" class="lazy-{page}" style="width:160px;height:90px"/><br/>
+         <?php }?>                             
          {name}
     </td>
     <td onclick="prop(this)" data-value="chk{id}">{created_at}</td>
@@ -601,10 +634,11 @@ $(function(){
 <nav id="control" class="navbar navbar-fixed-top" role="navigation">
 <div class="container">
 <div class="row">
-<h1>crawler m3u creater</h1>
+<h1>crawler m3u creater<span id="st"></span></h1>
 <hr>
 </div>
 <div class="row">
+
   <input class="col-xs-8 col-sm-8 col-md-8 col-lg-8" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
   <input style="margin-top:-4px" class="btn btn-primary col-xs-offset-1 col-xs-3 col-sm-offset-1 col-sm-3 col-md-offset-1 col-md-3 col-lg-offset-1 col-lg-2" type="submit" name="submit" value="search"/>
 </div>
@@ -615,11 +649,11 @@ $(function(){
   <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
   <label for="deliverymode">delivery mode</label>
-  <label><input type="radio" name="deliverymode" value="http" checked/>http</label>
-  <label><input type="radio" name="deliverymode" value="smb"/>smb</label>
+  <label><input type="radio" name="deliverymode" value="http"/>http</label>
+  <label><input type="radio" name="deliverymode" value="smb" checked/>smb</label>
 </div>
 </nav>
-<div class="container">
+<div id="main" class="container">
 <div class="row" id="table">
 <div id="dirs" style="border:1px solid;display:none;width:50%;z-index:10;position:absolute;top:0px;left:0px;background:#fff;">
   <button class="btn btn-primary pull-right" type="button" onclick="$('#dirs').toggle();">X</button>
@@ -643,7 +677,7 @@ $(function(){
 <?php foreach($info as $row) { ?>
   <tr>
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/><br/><?php echo $row['id']?></td>
-    <td class="left" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(!isSmartPhone()){ ?><img data-original="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
+    <td class="left" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
     <td><a href="<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
@@ -651,7 +685,7 @@ $(function(){
   </tbody>
 </table>
 <?php if( !(isset($_REQUEST["search"]) && $_REQUEST["search"] != "") ) { ?>
-<div style="margin-bottom:100px;text-align:center;">
+<div style="display:none;margin-bottom:100px;text-align:center;">
   <a href="javascript:void(0);"><h2 class="" type="button" id="more">more</h2></a>
 </div>
 <?php } ?>

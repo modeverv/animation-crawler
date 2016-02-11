@@ -44,7 +44,7 @@ class Crawler
     @fetching = 0
     @downloads = {}
     @ffmpeg = arghash[:ffmpeg] || false
-    @debug  = arghash[:debug] || false
+    #@debug  = arghash[:debug] || false
     @usecurl= arghash[:usecurl]|| false
     @_gaman = 60
     @gaman  = @_gaman
@@ -94,10 +94,10 @@ SQL
             @db.close
           end
         else
-          pp @queue
-          pp @queue.size
+          # pp @queue
+          # pp @queue.size
           @gaman = @_gaman
-          print "fetching:#{@fetching}\t"
+          # print "fetching:#{@fetching}\t"
           pp @downloads
         end
       end
@@ -134,7 +134,7 @@ SQL
       page = Nokogiri::HTML(req.response)
       page.css(".Top_info div ul li a").each {|a|
         if a.attributes['title'] && a.attributes['title'].value =~ /更新状況/
-          puts "更新状況:" + a.attributes['title']
+          # puts "更新状況:" + a.attributes['title']
           CrawlerLOGGER.info "更新状況" + a.attributes['title']
           @queue.push({kind: JOB_KOUSINPAGE, value: a.attributes['href'].value })
         end
@@ -145,7 +145,7 @@ SQL
 
   # anisoku kousin
   def anisokukousin url
-    # puts "anisokukousin : " + url
+    puts "anisokukousin : " + url if @debug
     # CrawlerLOGGER.info "anisokukousin : " + url
     req = EM::HttpRequest.new(url,:connect_timeout => 50).get
 
@@ -153,59 +153,61 @@ SQL
 
     req.callback do
       page = Nokogiri::HTML(req.response)
-      require 'pp'
       page.css("ul").each{|ul|
         if ul.attributes["type"] && ul.attributes["type"].value == "square"
-          ul2job ul
+          ul.css("li a").each{|a|
+            a2job a
+          }
         end
+      }
+      page.css("a").each{|a|
+        a2job a
       }
       @fetching -= 1
     end
   end
   
-  # ul to job 
-  def ul2job ul
-    ul.css("li a").each{|a|
-      href = ""
-      href = a.attributes["href"].value unless a.attributes["href"].nil?
-      if href =~ /^http\:\/\/youtubeanisoku1\.blog106\.fc2\.com\/blog-entry-.+?\.html$/
-        if a.attributes["title"]
-          title = a.attributes["title"].value
-        end
-        
-        unless title
-          title = a.text
-        end
-        
-        if title =~ /^.+$/
-          # puts title + "-" + href if @debug
-          title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
-          if @title[title]
-            #do nothing
-            # puts "skip:" + title
-          else
-            #if title =~ /落第/ || title =~ /学園/ 
-            @title[title] = true
-            puts "do:" + title
-            CrawlerLOGGER.info "do:" + title 
-            @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
-            #end
-          end
+  # a to job 
+  def a2job a
+    href = ""
+    href = a.attributes["href"].value unless a.attributes["href"].nil?
+    if href =~ /^http\:\/\/youtubeanisoku1\.blog106\.fc2\.com\/blog-entry-.+?\.html$/
+      if a.attributes["title"]
+        title = a.attributes["title"].value
+      end
+      
+      unless title
+        title = a.text
+      end
+      
+      if title =~ /^.+$/
+        title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+        if @title[title]
+          #do nothing
+          # puts "skip:" + title
+        else
+          #if title =~ /落第/ || title =~ /学園/ 
+          @title[title] = true
+          # puts "do:" + title
+          CrawlerLOGGER.info "do:" + title 
+          @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
+          #end
         end
       end
-    }
+    end
   end
 
   # anisoku kobetu
   def anisokukobetu value
-    # puts "anisokukobetu : " + value.to_s
+    puts "anisokukobetu : " + value.to_s if @debug
+
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
 
     req.errback { @fetching -= 1 }
 
     req.callback do
       page = Nokogiri::HTML(req.response)
-
+      unless page.title.nil?
       t = page.title.gsub(" ★ You Tube アニ速 ★","").strip
       t = t.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
 
@@ -225,12 +227,13 @@ SQL
         end
       }
       @fetching -= 1
-    end
+      end
+    end  
   end
 
   def nosubsearch value
-    # puts "nosubsearch  : " + value.to_s
-    urls = []
+    puts "nosubsearch  : " + value.to_s if @debug
+    values = []
 
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
 
@@ -244,18 +247,18 @@ SQL
         episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
         puts value[:title] + "-" + episode + "-" + href
         # unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
-        unless episode =~ /アニメPV集/ 
+        unless episode =~ /アニメPV集/ || episode =~ /エヴァンゲリオン新劇場版：序/ || episode =~ /WitchHunterROBIN/
           hash = {title: value[:title] ,episode: episode, href: href }
-          urls << hash
+          values << hash
         end
       }
-      @queue.push({kind: JOB_NOSUBVIDEO, value: urls })
+      @queue.push({kind: JOB_NOSUBVIDEO, value: values })
       @fetching -= 1
     end
   end
 
   def nosubvideo value
-    puts "nosubvideo  : " + value.to_s
+    puts "nosubvideo  : " + value.to_s if @debug
 
     urls = []
     fetched = false
@@ -276,8 +279,16 @@ SQL
       path = path.gsub("<u>","").gsub("'","").gsub(/"/,"")
       # puts "after:" + path
       pathmp4 = path.gsub(/flv$/,"mp4")
-      if File.exists?(path) || File.exists?(pathmp4)
-        puts "already exists. #{path} "
+
+      targetpath = ""
+      if File.exists?(path)
+        targetpath = path
+      else
+        targetpath = pathmp4
+      end
+      
+      if File.exists?(targetpath) && File.size(targetpath) > 1024 * 1024 * 2
+        puts "already exists. #{targetpath} " if @debug
         fetched = true
       end
 
@@ -410,7 +421,7 @@ SQL
           puts command
           system command
           puts "¥@fetching -= 1"
-          p @queue
+          # p @queue
           @fetching -= 1
           # result = @db.execute(@sql_select,:name => (File.basename path2))
           # if resule.size == 0
@@ -495,7 +506,7 @@ SQL
 
   def mkfilepath title,episode
     mkdirectory title
-    episode = episode.gsub(/\[720p\]/,"")
+    episode = episode.gsub(/\[720p\]/,"").gsub("?","？")
     DOWNLOADDIR + "/" + title + "/" + episode + ".flv"
   end
 
@@ -515,5 +526,5 @@ end
 
 # 最近のflvは中身をそのままで外装を変換するだけなのでコンバートまでしてしまう。
 # Crawler.new(ffmpeg: false,debug: false,usecurl: true).run
-Crawler.new(ffmpeg: true,debug: false,usecurl: true).run
+Crawler.new(ffmpeg: true,debug: true,usecurl: true).run
 

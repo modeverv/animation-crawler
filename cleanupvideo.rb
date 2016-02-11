@@ -43,6 +43,33 @@ def exists? row
   return File.exists? row[0]
 end
 
+# 能率悪いけどin区に値を入れ込む方法をしらぬ。
+def check_and_delete_duplicate
+  sql =<<-SQL
+select id,path,count(*) from crawler group by path having count(*) > 1
+SQL
+  db = SQLite3::Database.new(SQLITEFILE)
+  results = db.execute sql
+  sql2 =<<-SQL
+select id,path from crawler where path = :path 
+SQL
+  sql3 =<<-SQL
+delete from crawler where id = :id 
+SQL
+  results.each do |row|
+    rows = db.execute sql2,{ :path => row[1] }
+    ids = []
+    rows.each do |r|
+      ids << r
+    end
+    ids.shift
+    ids.each do |r|
+      puts "delete #{r[0]} - #{r[1]}"
+      db.execute sql3,{ :id => r[0] }
+    end
+  end
+  db.close
+end
 
 #---------------
 # main
@@ -54,3 +81,4 @@ filelist = selectAll
 filelist.each{|row|
   delete row unless exists? row
 }
+check_and_delete_duplicate
