@@ -265,11 +265,11 @@ SQL
 
     value.each { |val|
 
-      # if val[:title] =~ /マクロス/
-      #   puts "#" * 80
-      #   p val
-      #   puts "#" * 80
-      # end
+      if val[:title] =~ /少女たちは荒野を目指す/
+         puts "#" * 80
+         p val
+         puts "#" * 80
+      end
 
       path = mkfilepath val[:title],val[:episode]
       if path =~ /\[720p\]/
@@ -288,7 +288,7 @@ SQL
       end
       
       if File.exists?(targetpath) && File.size(targetpath) > 1024 * 1024 * 2
-        puts "already exists. #{targetpath} " if @debug
+        puts "already exists. #{targetpath} "
         fetched = true
       end
 
@@ -300,23 +300,30 @@ SQL
       @candidate[path] = :pending
 
       if fetched
+        p "fetched" + val.inspect
         @fetching -= 1
         next
       end
       
       @fetching += 1
-
+      if val[:href] == "http://www.nosub.tv/watch/229866.html"
+        puts "荒野8 " * 89
+      end
+      
       req = EM::HttpRequest.new(val[:href],:connect_timeout => 50).get
 
       req.errback { @fetching -= 1 }
 
+      req.errback {|client|
+        p "download error: #{client.inspect}";
+      }
+
       req.callback do
-        #p req.response
         page = Nokogiri::HTML(req.response)
         videos = []
         page.css("script[type='text/javascript']").each { |script|
-          # p script.children[0]
           next unless script.children[0] && script.children[0].to_s =~ /MukioPlayerURI/
+          p script.children[0].to_s
           lines = script.children[0].to_s.gsub("\n","").split(";")
           # p lines
           lines.each {|l|
@@ -324,11 +331,17 @@ SQL
             l =~ /type=(.*?)&/
             url = case $1
                   when "fc2"
+                    # type=fc2&vid=
+                    # 20160225z3SmPURT
+                    # &cid=tYCwQMAQAGGFEGCFcAB1EBGAprXDM2MDcqV177FF5","360pFC2","",1);
                     #"type=fc2&vid=20140106PVrVWc2X&cid=msWVIDBFIbAghSVggCCFVpb0pjZFpWPQyIA19b10","360pFC2","",1);
+                    # https://www.nosub.tv/wp-content/plugins/mukiopress//lianyue/?/fc2/20160225z3SmPURT
                     l =~ /vid=(.*?)&/
                     u = "https://www.nosub.tv/wp-content/plugins/mukiopress//lianyue/?/fc2/#{$1}"
                     x = false
-                    open(u) {|res| x = res.read }
+                    open(u) {|res|
+                        x = res.read
+                    }
                     x
                   when "video"
                     l =~ /file=(.*?)&/

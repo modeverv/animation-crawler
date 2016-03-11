@@ -625,7 +625,7 @@ $(function(){
          {name}
     </td>
     <td onclick="prop(this)" data-value="chk{id}">{created_at}</td>
-    <td><a href="{url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a href="play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 </script>
 </head>
@@ -679,7 +679,7 @@ $(function(){
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/><br/><?php echo $row['id']?></td>
     <td class="left" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
-    <td><a href="<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a href="play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 <?php }?>
   </tbody>
