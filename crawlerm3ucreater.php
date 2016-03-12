@@ -94,9 +94,9 @@ function sendM3u(){
         formatAndWrite($fh,$row);
     }
     fclose($fh);
-    header('Content-Type:application/octet-stream');  
-    header('Content-Disposition:filename=playlist.m3u'); 
-    header('Content-Length:' . filesize($filename));  
+    header('Content-Type:application/octet-stream');
+    header('Content-Disposition:filename=playlist.m3u');
+    header('Content-Length:' . filesize($filename));
     readfile($filename);
     //unlink($filename);
     exit;
@@ -173,7 +173,7 @@ function getDB(){
 }
 
 /**
- * modify table record 
+ * modify table record
  */
 function convertRows($rows){
     $info = array();
@@ -277,7 +277,7 @@ function videoglob(){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes"/>    
+<meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>crawler m3u creater</title>
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
@@ -621,11 +621,11 @@ $(function(){
     <td class="left" onclick="prop(this)" data-value="chk{id}">
          <?php if( ! isSmartPhone() ) { ?>
          <img data-original="{gif}" alt="gif" class="lazy-{page}" style="width:160px;height:90px"/><br/>
-         <?php }?>                             
+         <?php }?>
          {name}
     </td>
     <td onclick="prop(this)" data-value="chk{id}">{created_at}</td>
-    <td><a href="play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a href="https://modeverv.aa0.netvolante.jp/play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 </script>
 </head>
@@ -660,7 +660,7 @@ $(function(){
   <h2>作品リスト</h2>
   <ul style="pull-left;list-style:none;padding-left:10px;">
   <?php foreach($dirs as $dirname){?>
-    <li><?php echo makeSearchLink($dirname); ?></li>                              
+    <li><?php echo makeSearchLink($dirname); ?></li>
   <?php }?>
   </ul>
 </div>
@@ -679,7 +679,7 @@ $(function(){
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/><br/><?php echo $row['id']?></td>
     <td class="left" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
-    <td><a href="play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a href="https://modeverv.aa0.netvolante.jp/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 <?php }?>
   </tbody>
