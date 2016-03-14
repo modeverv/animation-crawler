@@ -3,3 +3,5 @@
 *.log
 *.db
 *.m3u
+vendor/*
+.bundle/*

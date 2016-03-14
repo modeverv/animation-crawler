@@ -1,5 +1,5 @@
 source 'http://rubygems.org'
-gem 'eventmachine'
+gem 'eventmachine', github: "eventmachine/eventmachine"
 gem 'em-http-request'
 gem 'nokogiri'
 gem 'mechanize'

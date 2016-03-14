@@ -135,7 +135,7 @@ var resizer = function() {
     $("#video").css("width",width);
 };
 resizer();
-$(document).on("orientationchange resize",resizer);
+$(window).on("orientationchange resize",resizer);
 $("#menushow").click();
 
 });

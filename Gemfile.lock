@@ -1,3 +1,9 @@
+GIT
+  remote: git://github.com/eventmachine/eventmachine.git
+  revision: 8cfcc0e20918b8db7db473fcd857e7b0eaadf134
+  specs:
+    eventmachine (1.2.0.dev.2)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -13,7 +19,6 @@ GEM
       http_parser.rb (>= 0.6.0)
     em-socksify (0.3.0)
       eventmachine (>= 1.0.0.beta.4)
-    eventmachine (1.0.3)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
     http_parser.rb (0.6.0)
@@ -45,8 +50,11 @@ PLATFORMS
 
 DEPENDENCIES
   em-http-request
-  eventmachine
+  eventmachine!
   httpclient
   mechanize
   nokogiri
   sqlite3
+
+BUNDLED WITH
+   1.11.2
