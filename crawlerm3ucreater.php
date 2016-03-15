@@ -611,6 +611,7 @@ function getMore(){
         }
         $("#maintable tbody").append(tablehtmls.join(""));
         $("#maintable img.lazy-" + page).lazyload({effect : "fadeIn"});
+        $("#maintable .view-video").on("click",viewVideo);
         page++;
         nowGetting = false;
     });
@@ -644,7 +645,7 @@ $(function(){
         getMore();
       }
    });
-   $(".view-video").on("click",viewVideo);
+   $("#maintable .view-video").on("click",viewVideo);
    $(window).on("orientationchange resize",resizer);
    $("#btn-videoclose").on("click",function(){
      if(confirm("閉じてもよろしいですか？")){
