@@ -6,6 +6,7 @@ $src = $_REQUEST["src"];
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <style>
+body{background-color:#000;}
 #main { position:absolute;top:0;height:100%;width:100%;left:0;z-index:-1 }
 #video { position:absolute;top:0;height:100%;width:100%;left:0;z-index:-1 }
 #menu { position:fixed;top:0;left:0;display:none;z-index:10; }
@@ -23,7 +24,7 @@ button:hover {
 }
 #menushow { position:fixed;top:0;left:0;height:100%;width:100%;z-index:10; }
 #closebtn { margin-top:20px;}
-#display {position:fixed;bottom:0;right:0;color:red;font-weight:bold;font-size:2em;display:none;}
+#display {position:fixed;top:0;right:0;color:red;font-weight:bold;font-size:2em;display:none;z-index:10000;}
 </style>
 <script src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
 </head>
@@ -32,7 +33,7 @@ button:hover {
 <div id="display"></div>
 
 <div id="main">
-  <video id="video" src="<?php echo $src; ?>" autoplay="autoplay"></video>
+  <video id="video" src="<?php echo $src; ?>"></video>
 </div>
 
 <div id="menu">
@@ -46,7 +47,7 @@ button:hover {
   <button id="skip90">90秒早送り</button>
   <button id="skip10">10秒早送り</button>
   <button id="rev10">10秒巻き戻し</button>
-  <button id="closewindow">閉じる</button>
+<!-- <button id="closewindow">閉じる</button> -->
 </div>
 
 <script>
@@ -122,7 +123,10 @@ $("#closebtn").on("click",function(){
   $("#menushow").show();
 });
 $("#closewindow").on("click",function(){
-    window.open('about:blank','_self').close()
+  if(confirm("閉じますか?")){
+      //window.open('about:blank','_self').close();
+      //$("#video-area").hide();
+  }
 });
 $("#menushow").on("click touchstart",function(){
   $("#menu").show();

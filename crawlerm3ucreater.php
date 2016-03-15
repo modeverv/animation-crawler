@@ -301,6 +301,21 @@ td.left {
 #dirs {
   margin-top:190px;
 }
+#video-area {
+  background-color:#000;
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  height:100%;
+  width:100%;
+  z-index:9999;
+}
+#video-frame {
+  width:100%;
+  height:100%;
+  border:none;
+}
 </style>
 <script>
 /*!
@@ -601,6 +616,22 @@ function getMore(){
     });
 }
 
+function viewVideo(){
+    $this = $(this);
+    var href = $this.attr("href");
+    console.log(href);
+    $("#video-frame").attr("src",href);
+    $("#video-area").show();
+    return false;
+}
+
+function resizer(){
+    $("#video-area").css("width",$(window).width());
+    $("#video-area").css("height",$(window).height());
+    $("#video-frame").css("width",$(window).width());
+    $("#video-frame").css("height",$(window).height() - 20);
+}    
+
 // init
 $(function(){
    var $window = $(window);
@@ -613,7 +644,15 @@ $(function(){
         getMore();
       }
    });
-});
+   $(".view-video").on("click",viewVideo);
+   $(window).on("orientationchange resize",resizer);
+   $("#btn-videoclose").on("click",function(){
+     if(confirm("閉じてもよろしいですか？")){
+       $('#video-area').toggle();
+       $('#video-frame').attr('src','');
+     }  
+   });
+});   
 </script>
 <script type="text/template" id="my-template">
   <tr>
@@ -625,11 +664,15 @@ $(function(){
          {name}
     </td>
     <td onclick="prop(this)" data-value="chk{id}">{created_at}</td>
-    <td><a href="https://modeverv.aa0.netvolante.jp/play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a class="view-video" href="https://modeverv.aa0.netvolante.jp/play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 </script>
 </head>
 <body>
+<div id="video-area">
+  <button class="btn btn-primary" type="button" id="btn-videoclose">X</button>
+  <iframe id="video-frame"></iframe> 
+</div>                           
 <form method="GET">
 <nav id="control" class="navbar navbar-fixed-top" role="navigation">
 <div class="container">
@@ -638,7 +681,6 @@ $(function(){
 <hr>
 </div>
 <div class="row">
-
   <input class="col-xs-8 col-sm-8 col-md-8 col-lg-8" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
   <input style="margin-top:-4px" class="btn btn-primary col-xs-offset-1 col-xs-3 col-sm-offset-1 col-sm-3 col-md-offset-1 col-md-3 col-lg-offset-1 col-lg-2" type="submit" name="submit" value="search"/>
 </div>
@@ -679,7 +721,7 @@ $(function(){
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/><br/><?php echo $row['id']?></td>
     <td class="left" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
-    <td><a href="https://modeverv.aa0.netvolante.jp/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a class="view-video" href="https://modeverv.aa0.netvolante.jp/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 <?php }?>
   </tbody>
