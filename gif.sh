@@ -1,6 +1,6 @@
 #! /bin/bash
 
-echo "###START###"
+echo "###START-gif###"
 PATH=$PATH:/home/seijiro/.nvm/v0.8.4/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
 export PATH="/home/seijiro/.rvm/bin:$PATH" # Add RVM to PATH for scripting
 source /home/seijiro/.rvm/environments/ruby-2.3.0
@@ -13,3 +13,4 @@ if [ x"$PID" != x"" ]; then
 fi
 bundle exec ruby -W0 checkvideo_gif.rb
 
+echo "###END-gif###"

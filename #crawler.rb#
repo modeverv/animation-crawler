@@ -33,7 +33,7 @@ class Crawler
   JOB_CONVERT        = "flv2mp4"
 
   DBFILE = "crawler.db"
-  
+
   # constructor
   # hash[:ffmpeg] convert or not
   # hash[:debug] debug or not
@@ -52,7 +52,7 @@ class Crawler
     @title = {}
     @titles = {}
     @db = SQLite3::Database.new(DBFILE)
-    sql = <<-SQL
+        sql = <<-SQL
 CREATE TABLE IF NOT EXISTS crawler(
   id integer primary key,
   name text,
@@ -60,11 +60,11 @@ CREATE TABLE IF NOT EXISTS crawler(
   created_at TIMESTAMP DEFAULT (DATETIME('now','localtime'))
 );
 SQL
-    @db.execute sql
-    @sql = <<-SQL
+        @db.execute sql
+            @sql = <<-SQL
 insert into crawler(name,path) values(:name,:path)
 SQL
-    @sql_select = <<-SQL
+                @sql_select = <<-SQL
 select * from crawler where name = :name 
 SQL
   end
@@ -166,8 +166,8 @@ SQL
       @fetching -= 1
     end
   end
-  
-  # a to job 
+
+  # a to job
   def a2job a
     href = ""
     href = a.attributes["href"].value unless a.attributes["href"].nil?
@@ -175,23 +175,23 @@ SQL
       if a.attributes["title"]
         title = a.attributes["title"].value
       end
-      
+
       unless title
         title = a.text
       end
-      
+
       if title =~ /^.+$/
         title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
         if @title[title]
           #do nothing
           # puts "skip:" + title
         else
-          # if title =~ /灰と幻想/ || title =~ /学園/ 
+          #if title =~ /落第/ || title =~ /学園/
           @title[title] = true
           # puts "do:" + title
-          CrawlerLOGGER.info "do:" + title 
+          CrawlerLOGGER.info "do:" + title
           @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
-          # end
+          #end
         end
       end
     end
@@ -208,27 +208,27 @@ SQL
     req.callback do
       page = Nokogiri::HTML(req.response)
       unless page.title.nil?
-      t = page.title.gsub(" ★ You Tube アニ速 ★","").strip
-      t = t.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+        t = page.title.gsub(" ★ You Tube アニ速 ★","").strip
+        t = t.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
 
-      if t
-        value[:title] = t
-      end
-          
-      page.css("a").each { |a|
-        href = ""
-        href = a.attributes["href"].value unless a.attributes["href"].nil?
-        if href =~ /http:\/\/www.nosub\.tv/
-          unless @titles[value[:title]]
-            # puts value[:title] + "-" + href
-            @titles[value[:title]] = :pedinding
-            @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
-          end
+        if t
+          value[:title] = t
         end
-      }
-      @fetching -= 1
+
+        page.css("a").each { |a|
+          href = ""
+          href = a.attributes["href"].value unless a.attributes["href"].nil?
+          if href =~ /http:\/\/www.nosub\.tv/
+            unless @titles[value[:title]]
+              # puts value[:title] + "-" + href
+              @titles[value[:title]] = :pedinding
+              @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
+            end
+          end
+        }
+        @fetching -= 1
       end
-    end  
+    end
   end
 
   def nosubsearch value
@@ -261,19 +261,19 @@ SQL
     puts "nosubvideo  : " + value.to_s if @debug
 
     urls = []
+    fetched = false
 
     value.each { |val|
-      fetched = false
 
-      if val[:title] =~ /11/
-         puts "#" * 80
-         p val
-         puts "#" * 80
+      if val[:title] =~ /少女たちは荒野を目指す/
+        puts "#" * 80
+        p val
+        puts "#" * 80
       end
 
       path = mkfilepath val[:title],val[:episode]
       if path =~ /\[720p\]/
-      #  return
+        #  return
       end
       # puts "before:" + path
       path = path.gsub("<u>","").gsub("'","").gsub(/"/,"")
@@ -286,7 +286,7 @@ SQL
       else
         targetpath = pathmp4
       end
-      
+
       if File.exists?(targetpath) && File.size(targetpath) > 1024 * 1024 * 2
         puts "already exists. #{targetpath} "
         fetched = true
@@ -300,22 +300,22 @@ SQL
       @candidate[path] = :pending
 
       if fetched
-        p "取得済み:" + val.inspect
+        p "fetched" + val.inspect
         @fetching -= 1
         next
       end
-      
+
       @fetching += 1
       if val[:href] =~ /232609.html/
         puts "灰11" * 20
       end
-      
+
       req = EM::HttpRequest.new(val[:href],:connect_timeout => 50).get
 
       req.errback { @fetching -= 1 }
 
       req.errback {|client|
-        p "download error event machine : #{client.inspect}";
+        p "download error: #{client.inspect}";
       }
 
       req.callback do
@@ -340,7 +340,7 @@ SQL
                     u = "https://www.nosub.tv/wp-content/plugins/mukiopress//lianyue/?/fc2/#{$1}"
                     x = false
                     open(u) {|res|
-                        x = res.read
+                      x = res.read
                     }
                     x
                   when "video"
@@ -348,66 +348,39 @@ SQL
                     # puts "video find!! #{$1} #{path} "
                     #http://www.nosub.tv/wp-content/plugins/mukiopress/lianyue/?/url/XBCAVbX1ZVVVUGXB1RTEYVRl9JGF9VUAUDUVUAGRdBHFhEAA4LEgRLWRZWFgkLSlwRA1pFGzVaXQ0kVl5SAwYJGTAJDA0gC19UAA0IHAhFUQYt4F4CcB
                     # 2016/03/21 ロジック変わった？
-                    r302 = lambda {|url|
-                      puts "url is #{url} "
-                      clnt = HTTPClient.new()
-                      res = clnt.get(url)
-                      x = res.header['Location']
-                      puts "res.header is "
-                      p x
-                      if x == []
-                        return url
-                      else
-                        return x[0]
-                      end
-                    }
-                    x = r302.call $1
+                    # clnt = HTTPClient.new()
+                    # res = clnt.get($1)
+                    # x = res.header['Location']
+                    # x == [] ? false : x[0]
+                    puts "**video**" * 20
+                    $1
                   when "youtube"
-                    puts "youtube"
                     false
                   when "qq"
-                    puts "qq"
                     false
                   else
-                    puts $1
-                    puts "else"
-                    l =~ /file=(.*?)&/
-                    r302 = lambda {|url|
-                      puts "url is #{url} "
-                      clnt = HTTPClient.new()
-                      res = clnt.get(url)
-                      x = res.header['Location']
-                      puts "res.header is "
-                      p x
-                      if x == []
-                        return url
-                      else
-                        return x[0]
-                      end
-                    }
-                    x = r302.call $1
+                    false
                   end
 
             # puts path + ":" + url if url
-            
+
             #checksize = checkvideourl url if url
             #if checksize
-              #downloadvideo url , path , checksize if url
+            #downloadvideo url , path , checksize if url
             if url
-              puts "#" * 20
+              puts "#" + 20
               puts "fetch #{url}"
-              puts "#" * 20
+              puts "#" + 20
               downloadvideo url , path , 10000
               fetched = true
             else
-              puts "#" * 20
-              p val
-              puts "url is false" * 20
-              puts "#" * 20
+              puts "#" + 20
+              put "url is false" * 20
+              puts "#" + 20
             end
             #end
             break if fetched
-           }
+          }
         }
         @fetching -= 1
       end
@@ -461,7 +434,7 @@ SQL
 
       if @usecurl
         @fetching += 1
-  
+
         if @ffmpeg
           puts "with ffmpeg"
           path2 = path.gsub(/flv$/,"mp4")
@@ -477,18 +450,18 @@ SQL
           @fetching -= 1
           # result = @db.execute(@sql_select,:name => (File.basename path2))
           # if resule.size == 0
-            @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
           # end
           @downloads[path] = "complete"
         else
           command = "curl -# -L -R -o '#{path}' '#{url}' &"
           # result = @db.execute(@sql_select,:name => (File.basename path2))
           # if resule.size == 0
-            @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
           # end
           puts command
           system command
-          
+
           @fetching -= 1
           @downloads[path] = "complete"
         end
@@ -502,7 +475,7 @@ SQL
 
       file = open(path, "w+b")
       http = EM::HttpRequest.new(url,:connect_timeout => 50)
-        .get({:redirects => 10,:head => {"accept-encoding" => "gzip, compressed"}})
+             .get({:redirects => 10,:head => {"accept-encoding" => "gzip, compressed"}})
 
       http.errback {|client|
         @downloads[path] = "error"
@@ -568,12 +541,12 @@ SQL
     rescue => ex
     end
   end
-  
+
   def mkgifpath path
     filename =  File.basename(path).gsub(/flv$/,"gif").gsub(/mp4$/,"gif")
     return "/var/smb/sdc1/video/tmp/" + filename
   end
-  
+
 end
 
 # 最近のflvは中身をそのままで外装を変換するだけなのでコンバートまでしてしまう。
