@@ -283,6 +283,8 @@ function videoglob(){
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <style>
+.break { word-break:break-all; }
+.pad {padding: 0px 10px 0px 10px; }
 .lazy { border-radius:5px; }
 th,td {
   text-align: center !important;
@@ -658,7 +660,7 @@ $(function(){
 <script type="text/template" id="my-template">
   <tr>
     <td><input class="chk" id="chk{id}" type="checkbox" name="ids[]" value="{id}"/><br/>{id}</td>
-    <td class="left" onclick="prop(this)" data-value="chk{id}">
+    <td class="left break" onclick="prop(this)" data-value="chk{id}">
          <?php if( ! isSmartPhone() ) { ?>
          <img data-original="{gif}" alt="gif" class="lazy-{page}" style="width:160px;height:90px"/><br/>
          <?php }?>
@@ -680,20 +682,19 @@ $(function(){
 <div class="row">
 <h1>crawler m3u creater<span id="st"></span></h1>
 <hr>
-</div>
-<div class="row">
   <input class="col-xs-8 col-sm-8 col-md-8 col-lg-8" type="text" name="search" value="<?php echo isset($_REQUEST['search']) ? $_REQUEST['search'] : '' ?>"/>
   <input style="margin-top:-4px" class="btn btn-primary col-xs-offset-1 col-xs-3 col-sm-offset-1 col-sm-3 col-md-offset-1 col-md-3 col-lg-offset-1 col-lg-2" type="submit" name="submit" value="search"/>
 </div>
-<div class="row" >
+<div class="row">
   <!-- <button class="btn btn-primary" type="button" onclick="reload();return false;">reload</button> -->
   <!-- <button class="btn btn-primary" type="button" onclick="uncheck();return false;">uncheck all</button>-->
   <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
   <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
-  <label for="deliverymode">delivery mode</label>
+  <label for="deliverymode">mode</label>
   <label><input type="radio" name="deliverymode" value="http"/>http</label>
   <label><input type="radio" name="deliverymode" value="smb" checked/>smb</label>
+</div>
 </div>
 </nav>
 <div id="main" class="container">
@@ -720,7 +721,7 @@ $(function(){
 <?php foreach($info as $row) { ?>
   <tr>
     <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/><br/><?php echo $row['id']?></td>
-    <td class="left" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
+    <td class="left break" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
     <td><a class="view-video" href="https://modeverv.aa0.netvolante.jp/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>

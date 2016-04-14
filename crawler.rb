@@ -134,7 +134,7 @@ SQL
       page = Nokogiri::HTML(req.response)
       page.css(".Top_info div ul li a").each {|a|
         if a.attributes['title'] && a.attributes['title'].value =~ /更新状況/
-          # puts "更新状況:" + a.attributes['title']
+          puts "更新状況:" + a.attributes['title']
           CrawlerLOGGER.info "更新状況" + a.attributes['title']
           @queue.push({kind: JOB_KOUSINPAGE, value: a.attributes['href'].value })
         end
@@ -186,9 +186,9 @@ SQL
           #do nothing
           # puts "skip:" + title
         else
-          # if title =~ /灰と幻想/ || title =~ /学園/ 
+          # if title =~ /ネトゲ/ || title =~ /学園/ 
           @title[title] = true
-          # puts "do:" + title
+          puts "do:" + title
           CrawlerLOGGER.info "do:" + title 
           @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
           # end

@@ -64,6 +64,8 @@ pathlist = [
             "/var/smb/sdb1/video/**/*.mkv",
             "/var/smb/sdb1/video/**/*.mp4",
             "/var/smb/sdb1/video/**/*.flv",
+            "/var/smb/sdb1/video/**/*.avi",
+            "/var/smb/sdc1/video/**/*.avi",            
            ]
 
 pathlist.each do |path|
