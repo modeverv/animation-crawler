@@ -179,14 +179,14 @@ SQL
       unless title
         title = a.text
       end
-      
+
       if title =~ /^.+$/
-        title = title.gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
+        title = title.gsub(":","").gsub('.','').gsub(" ","",).gsub("/","").gsub("#","").gsub("(","").gsub(")","")#.gsub("'","").gsub(/"/,"").gsub(/\<u\>/,"")
         if @title[title]
           #do nothing
           # puts "skip:" + title
         else
-          # if title =~ /ネトゲ/ || title =~ /学園/ 
+          # if title =~ /ゼロから始める/ || title =~ /学園/ 
           @title[title] = true
           puts "do:" + title
           CrawlerLOGGER.info "do:" + title 
@@ -306,9 +306,9 @@ SQL
       end
       
       @fetching += 1
-      if val[:href] =~ /232609.html/
-        puts "灰11" * 20
-      end
+      # if val[:href] =~ /232609.html/
+      #   puts "灰11" * 20
+      # end
       
       req = EM::HttpRequest.new(val[:href],:connect_timeout => 50).get
 
@@ -557,9 +557,10 @@ SQL
   end
 
   def mkfilepath title,episode
-    mkdirectory title
+    t = title.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","").gsub("：","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+    mkdirectory t
     episode = episode.gsub(/\[720p\]/,"").gsub("?","？")
-    DOWNLOADDIR + "/" + title + "/" + episode + ".flv"
+    DOWNLOADDIR + "/" + t + "/" + episode + ".flv"
   end
 
   def mkdirectory title

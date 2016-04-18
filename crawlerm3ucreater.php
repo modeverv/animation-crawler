@@ -714,7 +714,7 @@ $(function(){
     <th></th>
     <th>title</th>
     <th>created_at</th>
-    <th>link</th>
+    <th>play</th>
   </tr>
   </thead>
   <tbody>
