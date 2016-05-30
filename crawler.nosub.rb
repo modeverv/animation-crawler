@@ -199,7 +199,7 @@ SQL
 
   # anisoku kobetu
   def anisokukobetu value
-    puts "anisokukobetu : " + value.to_s if @debug
+    puts "anisokukobetu : " + value.to_s
 
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
 
@@ -218,7 +218,7 @@ SQL
       page.css("a").each { |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
-        if href =~ /http:\/\/www.nosub\.tv/
+        if href =~ /http:\/\/www.nosub\.se/
           unless @titles[value[:title]]
             # puts value[:title] + "-" + href
             @titles[value[:title]] = :pedinding
@@ -232,7 +232,7 @@ SQL
   end
 
   def nosubsearch value
-    puts "nosubsearch  : " + value.to_s if @debug
+    puts "nosubsearch  : " + value.to_s
     values = []
 
     req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
@@ -241,17 +241,21 @@ SQL
 
     req.callback do
       page = Nokogiri::HTML(req.response)
-      page.css(".title a[rel='bookmark']").each { |a|
+      #page.css(".title a[rel='bookmark']").each { |a|
+      page.css(".hidden-xs a").each do |a|
+        puts value.to_s
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
-        episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
-        puts value[:title] + "-" + episode + "-" + href
-        # unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
-        unless episode =~ /アニメPV集/ || episode =~ /エヴァンゲリオン新劇場版：序/ || episode =~ /WitchHunterROBIN/
-          hash = {title: value[:title] ,episode: episode, href: href }
-          values << hash
+        unless a.attributes["title"].nil?
+          episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+          puts value[:title] + "-" + episode + "-" + href
+          # unless episode =~ /アニメPV集/ && episode =~ /\[720p\]/
+          unless episode =~ /アニメPV集/ || episode =~ /エヴァンゲリオン新劇場版：序/ || episode =~ /WitchHunterROBIN/
+            hash = {title: value[:title] ,episode: episode, href: href }
+            values << hash
+          end
         end
-      }
+      end
       @queue.push({kind: JOB_NOSUBVIDEO, value: values })
       @fetching -= 1
     end
@@ -311,105 +315,13 @@ SQL
         # puts value.inspect
         page = Nokogiri::HTML(req.response)
         videos = []
-        
-        page.css("script[type='text/javascript']").each { |script|
-          next unless script.children[0] && script.children[0].to_s =~ /MukioPlayerURI/
-          # p script.children[0].to_s
-          lines = script.children[0].to_s.gsub("\n","").split(";")
-          # p lines
-          lines.each {|l|
-            next unless l =~ /addVideo/
-            l =~ /type=(.*?)&/
-            url = case $1
-                  when "fc2"
-                    # type=fc2&vid=
-                    # 20160225z3SmPURT
-                    # &cid=tYCwQMAQAGGFEGCFcAB1EBGAprXDM2MDcqV177FF5","360pFC2","",1);
-                    #"type=fc2&vid=20140106PVrVWc2X&cid=msWVIDBFIbAghSVggCCFVpb0pjZFpWPQyIA19b10","360pFC2","",1);
-                    # https://www.nosub.tv/wp-content/plugins/mukiopress//lianyue/?/fc2/20160225z3SmPURT
-                    l =~ /vid=(.*?)&/
-                    u = "https://www.nosub.tv/wp-content/plugins/mukiopress//lianyue/?/fc2/#{$1}"
-                    x = false
-                    open(u) {|res|
-                        x = res.read
-                    }
-                    x
-                  when "video"
-                    l =~ /file=(.*?)&/
-                    # puts "video find!! #{$1} #{path} "
-                    #http://www.nosub.tv/wp-content/plugins/mukiopress/lianyue/?/url/XBCAVbX1ZVVVUGXB1RTEYVRl9JGF9VUAUDUVUAGRdBHFhEAA4LEgRLWRZWFgkLSlwRA1pFGzVaXQ0kVl5SAwYJGTAJDA0gC19UAA0IHAhFUQYt4F4CcB
-                    # 2016/03/21 ロジック変わった？
-                    r302 = lambda {|url|
-                      puts "url is #{url} "
-                      clnt = HTTPClient.new()
-                      res = clnt.get(url)
-                      x = res.header['Location']
-                      puts "res.header is "
-                      p x
-                      if x == []
-                        return url
-                      else
-                        return x[0]
-                      end
-                    }
-                    x = r302.call $1
-                  when "youtube"
-                    puts "youtube"
-                    false
-                  when "qq"
-                    puts "qq"
-                    false
-                  when "veoh"
-                    puts "veoh"
-                    false
-                  else
-                    puts $1
-                    puts "else"
-                    l =~ /file=(.*?)&/
-                    r302 = lambda {|url|
-                      puts "url is #{url} "
-                      clnt = HTTPClient.new()
-                      x = []
-                      begin
-                        res = clnt.get(url)
-                        x = res.header['Location']
-                        puts "res.header is "
-                        p x
-                      rescue => ex
-                        p ex
-                      end
-                      if x == []
-                        return url
-                      else
-                        return x[0]
-                      end
-                    }
-                    x = r302.call $1
-                  end
 
-            # puts path + ":" + url if url
-            
-            #checksize = checkvideourl url if url
-            #if checksize
-              #downloadvideo url , path , checksize if url
-            if url
-               puts "#" * 20
-               puts "fetch #{url}"
-               puts "#" * 20
-               downloadvideo url , path , 10000
-               fetched = true
-            else
-               puts "#" * 20
-               p val
-               puts "url is false" * 20
-               puts "#" * 20
-             end
-            #end
-            
-            if fetched
-               break
-            end
-          }
+        page.css("a").each { |a|
+          href = ""
+          href = a.attributes["href"].value unless a.attributes["href"].nil?
+          if ! href.nil? && href =~ /vjs/ && href =~ /download=1/
+            downloadvideo "http:" + href , path , 10000
+          end
         }
         @fetching -= 1
       end
@@ -560,8 +472,11 @@ SQL
 
   def mkfilepath title,episode
     t = title.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","").gsub("：","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+    t = t.gsub("！","!")
     mkdirectory t
-    episode = episode.gsub(/\[720p\]/,"").gsub("?","？")
+    episode = episode.gsub(/\[720p\]/,"").gsub("?","？")#.gsub("「","").gsub("」","")
+    episode = episode.gsub(/高画質/,"").gsub(/QQ/,"").gsub("[","").gsub("]","").gsub("」","").gsub("「","")
+    episode = episode.gsub("！","!")
     episode = episode.slice(0,60)
     DOWNLOADDIR + "/" + t + "/" + episode + ".flv"
   end
