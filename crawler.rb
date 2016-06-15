@@ -200,7 +200,7 @@ SQL
           #do nothing
           # puts "skip:" + title
         else
-          # if title =~ /ばくおん/ #|| title =~ /ゼロから始める/ 
+          # if title =~ /ふらいんぐ/ #|| title =~ /ゼロから始める/ 
             @title[title] = true
             puts "do:" + title
             CrawlerLOGGER.info "do:" + title

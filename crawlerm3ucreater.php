@@ -40,8 +40,8 @@ function dispatch(){
     }
 }
 
-function getFileSizeMBStr($filepath){
-   return round(filesize($filepath) / pow(1024, 2))  . "MB";
+function getFileSize($filepath){
+   return round(filesize($filepath) / pow(1024, 2));
 }
 
 /**
@@ -178,10 +178,13 @@ function getDB(){
 function convertRows($rows){
     $info = array();
     foreach($rows as $row){
-        $row["name"] = $row["name"] . " - " .getFileSizeMBStr($row["path"]);
-        $row["url"] = convertPath($row["path"]);
-        $row["gif"] = convertGif($row["path"]);
-        $info[] = $row;
+        $filesize = getFileSize($row["path"]);
+        if($filesize > 0){
+            $row["name"] = $row["name"] . " - " . $filesize . "MB";
+            $row["url"] = convertPath($row["path"]);
+            $row["gif"] = convertGif($row["path"]);
+            $info[] = $row;
+        }
     }
     return $info;
 }
@@ -222,7 +225,7 @@ function more(){
     $page = htmlspecialchars($_REQUEST["page"]);
     $skip = (int)$page * $per_page;
     $pdo = getDB();
-    error_log("per_page:" . $per_page . " skip:" . $skip . " page:" . $page);
+    //error_log("per_page:" . $per_page . " skip:" . $skip . " page:" . $page);
     $sql = "select * from crawler order by id desc limit " . $per_page . " offset " . $skip;
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
@@ -729,7 +732,7 @@ $(function(){
   </tbody>
 </table>
 <?php if( !(isset($_REQUEST["search"]) && $_REQUEST["search"] != "") ) { ?>
-<div style="display:none;margin-bottom:100px;text-align:center;">
+<div style="display:block;margin-bottom:100px;text-align:center;">
   <a href="javascript:void(0);"><h2 class="" type="button" id="more">more</h2></a>
 </div>
 <?php } ?>
