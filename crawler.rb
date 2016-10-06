@@ -136,7 +136,7 @@ SQL
 
   # anisoku top
   def anisokutop url
-    req = EM::HttpRequest.new(url,:connect_timeout => 50).get
+    req = EM::HttpRequest.new(url,:connect_timeout => 5000, :inactivity_timeout => 5000).get
 
     req.errback { @fetching -= 1 }
 
@@ -144,7 +144,7 @@ SQL
       page = Nokogiri::HTML(req.response)
       page.css(".Top_info div ul li a").each {|a|
         if a.attributes['title'] && a.attributes['title'].value =~ /更新状況/
-          puts "更新状況:" + a.attributes['title']
+          # puts "更新状況:" + a.attributes['title']
           CrawlerLOGGER.info "更新状況" + a.attributes['title']
           @queue.push({kind: JOB_KOUSINPAGE, value: a.attributes['href'].value })
         end
@@ -157,7 +157,7 @@ SQL
   def anisokukousin url
     puts "anisokukousin : " + url if @debug
     # CrawlerLOGGER.info "anisokukousin : " + url
-    req = EM::HttpRequest.new(url,:connect_timeout => 50).get
+    req = EM::HttpRequest.new(url,:connect_timeout => 5000, :inactivity_timeout => 5000).get
 
     req.errback { @fetching -= 1 }
 
@@ -200,16 +200,16 @@ SQL
           #do nothing
           # puts "skip:" + title
         else
-          # if title =~ /ふらいんぐ/ #|| title =~ /ゼロから始める/ 
+          if proseed title
             @title[title] = true
-            puts "do:" + title
-            CrawlerLOGGER.info "do:" + title
+            # puts "do:" + title
+            # CrawlerLOGGER.info "do:" + title
             if @urls[href]
               return
             end
             @urls[href] = :doing
             @queue.push({kind: JOB_KOBETUPAGE, value: {title: title, href: href } })
-          # end
+          end
         end
       end
     end
@@ -217,9 +217,9 @@ SQL
 
   # anisoku kobetu
   def anisokukobetu value
-    puts "anisokukobetu : " + value.to_s #if @debug
+    puts "anisokukobetu : " + value.to_s if @debug
 
-    req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
+    req = EM::HttpRequest.new(value[:href],:connect_timeout => 5000, :inactivity_timeout => 5000).get
 
     req.errback { @fetching -= 1 }
 
@@ -233,7 +233,7 @@ SQL
         value[:title] = t
       end
 
-      puts t
+      # puts t
         
       page.css("a").each { |a|
         href = ""
@@ -247,7 +247,7 @@ SQL
         # end
         if href =~ /anitan\.tv\/\?s/
           unless @titles[value[:title]]
-            puts value[:title] + "-" + href
+            # puts value[:title] + "-" + href
             @titles[value[:title]] = :pedinding
             @queue.push({kind: JOB_ANITANSEARCH, value: {title: value[:title], href: href } })
           end
@@ -261,23 +261,55 @@ SQL
   def anitansearch value
     puts "anitansearch  : " + value.to_s #if @debug
     values = []
+    value[:href] = value[:href].gsub("%WWW","WWW")
 
     begin
-      req = EM::HttpRequest.new(value[:href],:connect_timeout => 50).get
+      open(value[:href]) {|io|
+        page = Nokogiri::HTML(io.read)
+        puts "in"
+        page.css("#main a[rel='bookmark']").each do |a|
+          href = ""
+          href = a.attributes["href"].value unless a.attributes["href"].nil?
+          episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+          puts value[:title] + "-" + episode + "-" + href
+          unless episode =~ /アニメPV集/ || episode =~ /エヴァンゲリオン新劇場版：序/ || episode =~ /WitchHunterROBIN/
+            hash = {title: value[:title] ,episode: episode, href: href }
+            values << hash
+          end
+        end
+        @queue.push({kind: JOB_ANITANVIDEO, value: values })
+        @fetching -= 1
+      }
+    rescue => ex
+      pp ex
+    end
+    
+    return
+    
+    begin
+      sleep 0.5
+      req = EM::HttpRequest.new(value[:href],:connect_timeout => 5000, :inactivity_timeout => 5000).get
+      req.headers do
+        # pp req.response_header
+      end
     rescue => ex
       p ex
     end
 
-    req.errback { @fetching -= 1 }
+    req.errback { |client|
+      @fetching -= 1
+      pp "get error event machine : #{client.inspect}";
+      puts "err #{value[:href]}"
+    }
 
     req.callback do
       page = Nokogiri::HTML(req.response)
-      puts "in"
+      # puts "in"
       page.css("#main a[rel='bookmark']").each do |a|
         href = ""
         href = a.attributes["href"].value unless a.attributes["href"].nil?
         episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
-        puts value[:title] + "-" + episode + "-" + href
+        # puts value[:title] + "-" + episode + "-" + href
         unless episode =~ /アニメPV集/ || episode =~ /エヴァンゲリオン新劇場版：序/ || episode =~ /WitchHunterROBIN/
           hash = {title: value[:title] ,episode: episode, href: href }
           values << hash
@@ -308,7 +340,7 @@ SQL
             
             us = x.split("&")
             u = x[0]
-            puts "u is #{u}"
+            # puts "u is #{u}"
             hs = {}
             us = []
             if x.size > 2
@@ -321,7 +353,7 @@ SQL
             u = u + "?mid" + hs["mid"] + "&px-time" + hs["cdnt"] + "&px-hash=" + hs["cdnh"]
             u
           when "video"
-            puts "type = video; " * 20
+            # puts "type = video; " * 20
             l =~ /file=(.*?)&/
             r302 = lambda do |url|
               # puts "url is #{url} "
@@ -355,14 +387,14 @@ SQL
             puts "else"
             l =~ /file=(.*?)&/
             r302 = lambda do |url|
-        puts "url is #{url} "
+        # puts "url is #{url} "
         clnt = HTTPClient.new()
         x = []
         begin
           res = clnt.get(url)
           x = res.header['Location']
-          puts "res.header is "
-          p x
+          # puts "res.header is "
+          # p x
         rescue => ex
           p ex
         end
@@ -390,7 +422,7 @@ SQL
       
       path = mkfilepath val[:title],val[:episode]
       
-      puts "before:" + path
+      # puts "before:" + path
       
       path = path.gsub("<u>","").gsub("'","").gsub(/"/,"")
       # puts "after:" + path
@@ -404,19 +436,19 @@ SQL
        end
        
        if File.exists?(targetpath) && File.size(targetpath) > 1024 * 1024 * 2
-         puts "already exists. #{targetpath} "
+         # puts "already exists. #{targetpath} "
          fetched = true
        end
  
        if @candidate[path]
-         puts "candidate. #{path} "
+         # puts "candidate. #{path} "
          fetched = true
        end
  
        @candidate[path] = :pending
  
        if fetched
-         p "取得済み:" + val.inspect
+         # p "取得済み:" + val.inspect
          @fetching -= 1
          next
        end
@@ -440,18 +472,73 @@ SQL
         p ex
       end
 
-      puts "val[:href] - #{val[:href]}"
+      # puts "val[:href] - #{val[:href]}"
+      begin
+        open(val[:href]){|io|
+          # puts value.inspect
+          page = Nokogiri::HTML(io.read)
+          
+          videos = []
+
+          page.css("script").each do |script|
+            next unless script.children[0] && script.children[0].to_s =~ /MukioPlayerURI/
+            lines = script.children[0].to_s.gsub("\n","").split(";")
+            lines.each do |l|
+              next unless l =~ /addVideo/
+              # next unless l =~ /type=fc2/
+              puts l
+              l =~ /type=(.*?)&/
+              type = $1
+              url = getURL type,l
+
+              # puts path + ":" + url if url
+              
+              # checksize = checkvideourl url if url
+              # if checksize
+              #downloadvideo url , path , checksize if url
+              if url
+                puts "#" * 20
+                puts "fetch #{url}"
+                puts "#" * 20
+                downloadvideo url , path , 10000
+                fetched = true
+              else
+                puts "#" * 20
+                p val
+                puts "url is false" * 20
+                puts "#" * 20
+              end
+              # end
+              
+              if fetched
+                puts "fetched is true"
+                break
+              end
+            end
+          end
+          
+        }
+      rescue => ex
+        pp ex
+      end
+      
+      return 
 
       begin
-        req = EM::HttpRequest.new(val[:href],:connect_timeout => 50).get
+        sleep 0.5
+        req = EM::HttpRequest.new(val[:href],:connect_timeout => 5000, :inactivity_timeout => 5000).get
       rescue => ex
         p ex
       end
 
-      req.errback { @fetching -= 1 }
+      req.errback {
+        @fetching -= 1
+
+      }
 
       req.errback {|client|
-        p "get error event machine : #{client.inspect}";
+        puts "timeout anitanvideo #{val[:href]}"        
+        pp "get error event machine : #{client.inspect}";
       }
 
       req.callback do
@@ -662,11 +749,11 @@ SQL
   end
 
   def mkfilepath title,episode
-    t = title.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","").gsub("：","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
-    t = t.gsub("！","!")
+    t = title.gsub("(","（").gsub(")","）").gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","").gsub("：","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+    t = t.gsub("！","!").gsub("+","＋")
     mkdirectory t
     episode = episode.gsub(/\[720p\]/,"").gsub("?","？")#.gsub("「","").gsub("」","")
-    episode = episode.gsub(/高画質/,"").gsub(/QQ/,"").gsub("[","").gsub("]","").gsub("」","").gsub("「","")
+    episode = episode.gsub(/高画質/,"").gsub(/QQ/,"").gsub("[","").gsub("]","").gsub("」","").gsub("「","").gsub("+","").gsub("(","（").gsub(")","）").gsub("！","!").gsub("+","")
     episode = episode.gsub("！","!")
     episode = episode.slice(0,60)
     DOWNLOADDIR + "/" + t + "/" + episode + ".flv"
@@ -682,6 +769,15 @@ SQL
   def mkgifpath path
     filename =  File.basename(path).gsub(/flv$/,"gif").gsub(/mp4$/,"gif")
     return "/var/smb/sdc1/video/tmp/" + filename
+  end
+
+  def proseed title
+     return true
+    if title =~ /文豪/
+      return true
+    else
+      return false
+    end
   end
   
 end

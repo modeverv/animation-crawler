@@ -13,7 +13,7 @@ switch (true) {
         die('need login');
 }
 */
-$per_page = 20;
+$per_page = 100;
 $info; // contains data which used for display
 $dirs = array(); // contains directory data used for display
 
@@ -316,10 +316,19 @@ td.left {
   width:100%;
   z-index:9999;
 }
+#video-button-area{
+  position:fixed;
+  top:0;
+  z-index:9998;
+}
 #video-frame {
   width:100%;
   height:100%;
+  left:0;
   border:none;
+  position:fixed;
+  top:0;
+  z-index:9997;
 }
 </style>
 <script>
@@ -662,7 +671,7 @@ $(function(){
 </script>
 <script type="text/template" id="my-template">
   <tr>
-    <td><input class="chk" id="chk{id}" type="checkbox" name="ids[]" value="{id}"/><br/>{id}</td>
+    <td onclick="prop(this)" data-value="chk{id}"><input class="chk" id="chk{id}" type="checkbox" name="ids[]" value="{id}"/></td>
     <td class="left break" onclick="prop(this)" data-value="chk{id}">
          <?php if( ! isSmartPhone() ) { ?>
          <img data-original="{gif}" alt="gif" class="lazy-{page}" style="width:160px;height:90px"/><br/>
@@ -676,7 +685,7 @@ $(function(){
 </head>
 <body>
 <div id="video-area">
-  <button class="btn btn-primary" type="button" id="btn-videoclose">X</button>
+  <div id="video-button-area"><button class="btn btn-primary" type="button" id="btn-videoclose">X</button></div>
   <iframe id="video-frame"></iframe> 
 </div>                           
 <form method="GET">
@@ -723,7 +732,7 @@ $(function(){
   <tbody>
 <?php foreach($info as $row) { ?>
   <tr>
-    <td><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/><br/><?php echo $row['id']?></td>
+    <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
     <td class="left break" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
     <td><a class="view-video" href="https://modeverv.aa0.netvolante.jp/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>

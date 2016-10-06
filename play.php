@@ -9,7 +9,7 @@ $src = $_REQUEST["src"];
 body{background-color:#000;}
 #main { position:absolute;top:0;height:100%;width:100%;left:0;z-index:-1 }
 #video { position:absolute;top:0;height:100%;width:100%;left:0;z-index:-1 }
-#menu { position:fixed;top:0;left:0;display:none;z-index:10; }
+#menu { position:fixed;top:40px;left:0;display:none;z-index:10; }
 button {
   border-radius:5px;
   padding:10px;
@@ -133,13 +133,15 @@ $("#menushow").on("click touchstart",function(){
   $("#menushow").hide();
 });
 var resizer = function() {
-    var height = $(document).height();
-    var width = $(document).width();
+    var height = $(window).height();
+    var width = $(window).width();
     $("#video").css("height",height);
     $("#video").css("width",width);
+    $("#video").css("top","0");
+    
 };
-resizer();
-$(window).on("orientationchange resize",resizer);
+//resizer();
+//$(window).on("orientationchange resize",resizer);
 $("#menushow").click();
 
 });
