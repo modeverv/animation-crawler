@@ -48,7 +48,7 @@ class Crawler
     @ffmpeg = arghash[:ffmpeg] || false
     #@debug  = arghash[:debug] || false
     @usecurl= arghash[:usecurl]|| false
-    @_gaman = 60
+    @_gaman = 600
     @gaman  = @_gaman
     @candidate = {}
     @title = {}
@@ -772,8 +772,8 @@ SQL
   end
 
   def proseed title
-     return true
-    if title =~ /文豪/
+    return true
+    if title =~ /響/
       return true
     else
       return false
