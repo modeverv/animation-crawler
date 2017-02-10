@@ -773,7 +773,7 @@ SQL
 
   def proseed title
     return true
-    if title =~ /響/
+    if title =~ /セイレン/
       return true
     else
       return false
