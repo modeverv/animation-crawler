@@ -6,6 +6,7 @@ modify DOWNLOADDIR in `crawler.rb`
     
 ## usage
 run script
+
     $ ruby create_db.rb
     $ chmod 777 ./crawler.db
     $ crawler.sh
