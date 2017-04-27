@@ -70,7 +70,7 @@ function sendM3u(){
     #EXTINF:1450,おそ松さん03「こぼれ話集」.flv
     /Volumes/smb/sdc1/video/おそ松さん/おそ松さん03「こぼれ話集」.flv
     =>
-    http://seijiro:fuga@modeverv.aa0.modeverv.aa0.netvolante.jp/video/
+    http://seijiro:fuga@lovesaemi.daemon.asia/video/
      */
     $ids = $_REQUEST["ids"];
     if(count($ids) == 0){
@@ -107,8 +107,8 @@ function sendM3u(){
  */
 function convertPath($path){
     $p = str_replace(" ","%20",$path);
-    $p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@modeverv.aa0.netvolante.jp/",$p);
-    $p = str_replace("/var/smb/sdb1/video","https://seijiro:fuga@modeverv.aa0.netvolante.jp/video2",$p);
+    $p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@lovesaemi.daemon.asia/",$p);
+    $p = str_replace("/var/smb/sdb1/video","https://seijiro:fuga@lovesaemi.daemon.asia/video2",$p);
     return $p;
 }
 
@@ -141,7 +141,7 @@ function convertGif($path){
     $gif = str_replace("mkv","gif",$gif);
     $gif = str_replace("rmvb","gif",$gif);
     $p = str_replace(" ","%20",$gif);
-    $p = "//seijiro:fuga@modeverv.aa0.netvolante.jp/video/gif/" . $p;
+    $p = "//seijiro:fuga@lovesaemi.daemon.asia/video/gif/" . $p;
     return $p;
 }
 
@@ -284,6 +284,7 @@ function videoglob(){
 <title>crawler m3u creater</title>
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+<link rel="apple-touch-icon" href="favicon.ico" />
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <style>
 .break { word-break:break-all; }
@@ -679,7 +680,7 @@ $(function(){
          {name}
     </td>
     <td onclick="prop(this)" data-value="chk{id}">{created_at}</td>
-    <td><a class="view-video" href="https://modeverv.aa0.netvolante.jp/play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a class="view-video" href="https://lovesaemi.daemon.asia/play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 </script>
 </head>
@@ -735,7 +736,7 @@ $(function(){
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
     <td class="left break" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
-    <td><a class="view-video" href="https://modeverv.aa0.netvolante.jp/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a class="view-video" href="https://lovesaemi.daemon.asia/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 <?php }?>
   </tbody>

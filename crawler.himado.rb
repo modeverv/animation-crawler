@@ -12,6 +12,9 @@ require 'mechanize'
 require 'net/http'
 require 'logger'
 require 'sqlite3'
+require 'capybara/poltergeist'
+require 'capybara/webkit'
+require 'headless'
 
 class Crawler
   DOWNLOADDIR = "/var/smb/sdc1/video"
@@ -71,6 +74,28 @@ SQL
     @sql_select = <<-SQL
 select * from crawler where name = :name
 SQL
+
+    # Capybara.register_driver :poltergeist do |app|
+    #   Capybara::Poltergeist::Driver.new(app, {:js_errors => true, :timeout => 5000 })
+    # end
+    Capybara::Webkit.configure do |config|
+      # Enable debug mode. Prints a log of everything the driver is doing.
+      config.debug = false
+      config.allow_url("*")
+    end
+    Capybara.default_driver = :webkit
+    Capybara.javascript_driver = :webkit
+    Headless.new.start
+    # @session = Capybara::Session.new(:poltergeist)
+    @session = Capybara::Session.new(:webkit)
+
+    # @session.driver.headers = {
+    #   'User-Agent' => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+    # }
+    @session.driver.header('user-agent', "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36")
+    #puts html
+    #doc = Nokogiri::HTML(html)
+    #p doc.css("video").attribute["src"]
   end
 
   def run
@@ -244,21 +269,20 @@ SQL
         #     @queue.push({kind: JOB_NOSUBSEARCH, value: {title: value[:title], href: href } })
         #   end
         # end
-        if href =~ /anitan\.tv\/\?s/
-          unless @titles[value[:title]]
-            # puts value[:title] + "-" + href
-            @titles[value[:title]] = :pedinding
-            @queue.push({kind: JOB_ANITANSEARCH, value: {title: value[:title], href: href } })
-          end
-        end
-      }
-      @fetching -= 1
+          next unless href =~ /himado\.in\/\?s/
+          next unless a.children[0].text =~ /「ひまわり」/
+          next if @titles[value[:title]]
+          # puts value[:title] + "-" + href
+          @titles[value[:title]] = :pedinding
+          @queue.push({kind: JOB_ANITANSEARCH, value: {title: value[:title], href: href } })
+        }
+        @fetching -= 1
       end
     end
   end
 
   def anitansearch value
-    puts "anitansearch  : " + value.to_s #if @debug
+    puts "himadosearch  : " + value.to_s #if @debug
     values = []
     value[:href] = value[:href].gsub("%WWW","WWW")
 
@@ -266,10 +290,10 @@ SQL
       open(value[:href]) {|io|
         page = Nokogiri::HTML(io.read)
         puts "in"
-        page.css("#main a[rel='bookmark']").each do |a|
-          href = ""
-          href = a.attributes["href"].value unless a.attributes["href"].nil?
-          episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
+        page.css(".thumbtitle a[rel='nofollow']").each do |a|
+          href = "http://himado.in"
+          href += a.attributes["href"].value unless a.attributes["href"].nil?
+          episode = a.attributes["title"].value.gsub('.','').gsub(" ","").gsub("/","").gsub("　","").gsub("#","").gsub(":","").gsub("第","").gsub("話","")#.gsub("(","").gsub(")","")#.gsub(/"/,"").gsub(/\<u\>/,"")
           puts value[:title] + "-" + episode + "-" + href
           unless episode =~ /アニメPV集/ || episode =~ /エヴァンゲリオン新劇場版：序/ || episode =~ /WitchHunterROBIN/
             hash = {title: value[:title] ,episode: episode, href: href }
@@ -406,7 +430,7 @@ SQL
   end
 
   def anitanvideo value
-    puts "anitanvideo  : " + value.to_s #if @debug
+    puts "hiamdovideo  : " + value.to_s #if @debug
 
     urls = []
 
@@ -446,24 +470,37 @@ SQL
        end
        @fetching += 1
       # puts val[:href]
-      begin
-        clnt = HTTPClient.new()
-        res = clnt.get(val[:href])
-        x = res.header['Location']
-        # puts "res.header is #{x}"
-        p x
-        if x == []
-          url = val[:href]
-        else
-          url =  x[0]
-        end
-        val[:href] = url
-      rescue => ex
-        p ex
-      end
+      #  begin
+      #    clnt = HTTPClient.new()
+      #    res = clnt.get(val[:href])
+      #    x = res.header['Location']
+      #    # puts "res.header is #{x}"
+      #    p x
+      #    if x == []
+      #      url = val[:href]
+      #    else
+      #      url =  x[0]
+      #    end
+      #    val[:href] = url
+      #  rescue => ex
+      #    p ex
+      #  end
 
       # puts "val[:href] - #{val[:href]}"
       begin
+        url = false
+        p val[:href]
+        @session.visit val[:href]
+        begin
+          url = URI.unescape(@session.find("video")["src"])
+          puts url
+        rescue => eex
+          p eex
+        end
+
+        return downloadvideo(url, path, 10000) if url
+        return
+
         open(val[:href]){|io|
           # puts value.inspect
           page = Nokogiri::HTML(io.read)
@@ -471,15 +508,16 @@ SQL
           videos = []
 
           page.css("script").each do |script|
-            next unless script.children[0] && script.children[0].to_s =~ /MukioPlayerURI/
+            next unless script.children[0] && script.children[0].to_s =~ /movie_url/
             lines = script.children[0].to_s.gsub("\n","").split(";")
             lines.each do |l|
-              next unless l =~ /addVideo/
+              next unless l =~ /var movie_url/
               # next unless l =~ /type=fc2/
               puts l
-              l =~ /type=(.*?)&/
-              type = $1
-              url = getURL type,l
+              l =~ /movie_url = '(.*?)'/
+              bare_url = $1
+              url = URI.unescape(bare_url)
+              # url = getURL type,l
 
               # puts path + ":" + url if url
 
@@ -750,10 +788,9 @@ SQL
   end
 
   def mkdirectory title
-    begin
       Dir.mkdir DOWNLOADDIR + "/" + title
     rescue => ex
-    end
+      p ex
   end
 
   def mkgifpath path
@@ -763,7 +800,7 @@ SQL
 
   def proseed title
     return true
-    if title =~ /魔法の書/
+    if title =~ /終末/
       return true
     else
       return false
@@ -775,4 +812,3 @@ end
 # 最近のflvは中身をそのままで外装を変換するだけなのでコンバートまでしてしまう。
 # Crawler.new(ffmpeg: false,debug: false,usecurl: true).run
 Crawler.new(ffmpeg: true,debug: true,usecurl: true).run
-
