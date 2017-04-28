@@ -452,12 +452,10 @@ SQL
        end
 
        if File.exists?(targetpath) && File.size(targetpath) > 1024 * 1024 * 2
-         # puts "already exists. #{targetpath} "
          fetched = true
        end
 
        if @candidate[path]
-         # puts "candidate. #{path} "
          fetched = true
        end
 
@@ -469,148 +467,47 @@ SQL
          next
        end
        @fetching += 1
-      # puts val[:href]
-      #  begin
-      #    clnt = HTTPClient.new()
-      #    res = clnt.get(val[:href])
-      #    x = res.header['Location']
-      #    # puts "res.header is #{x}"
-      #    p x
-      #    if x == []
-      #      url = val[:href]
-      #    else
-      #      url =  x[0]
-      #    end
-      #    val[:href] = url
-      #  rescue => ex
-      #    p ex
-      #  end
 
-      # puts "val[:href] - #{val[:href]}"
+      url = false
+      p val[:href]
       begin
-        url = false
-        p val[:href]
         @session.visit val[:href]
         begin
-          url = URI.unescape(@session.find("video")["src"])
-          puts url
-        rescue => eex
-          p eex
+          a = @session.find("video")["src"]
+          url = URI.unescape(a)
+        rescue => e1
+          p e1
         end
 
-        return downloadvideo(url, path, 10000) if url
-        return
+        p url
 
-        open(val[:href]){|io|
-          # puts value.inspect
-          page = Nokogiri::HTML(io.read)
-
-          videos = []
-
-          page.css("script").each do |script|
-            next unless script.children[0] && script.children[0].to_s =~ /movie_url/
-            lines = script.children[0].to_s.gsub("\n","").split(";")
-            lines.each do |l|
-              next unless l =~ /var movie_url/
-              # next unless l =~ /type=fc2/
-              puts l
-              l =~ /movie_url = '(.*?)'/
-              bare_url = $1
-              url = URI.unescape(bare_url)
-              # url = getURL type,l
-
-              # puts path + ":" + url if url
-
-              # checksize = checkvideourl url if url
-              # if checksize
-              #downloadvideo url , path , checksize if url
-              if url
-                puts "#" * 20
-                puts "fetch #{url}"
-                puts "#" * 20
-                downloadvideo url , path , 10000
-                fetched = true
-              else
-                puts "#" * 20
-                p val
-                puts "url is false" * 20
-                puts "#" * 20
-              end
-              # end
-
-              if fetched
-                puts "fetched is true"
-                break
-              end
-            end
+        begin
+          if url == false
+            flashvars = @session.find("#playerswf")["flashvars"]
+            flashvars =~ /'url='(.*)' sou/
+            url_bare = $1
+            url = URI.unescape(url_bare)
           end
+        rescue => e2
+          p e2
+        end
 
-        }
+        p url
+
+        begin
+          if url == false
+            @session.execute_script "$('#movie_title').attr('src',ary_spare_sources.spare[1].src);"
+            src = @session.find("#movie_title")["src"]
+            url = URI.unescape(src)
+          end
+        rescue => e3
+          p e3
+        end
+
+        downloadvideo(url, path, 10000) if url
+
       rescue => ex
         pp ex
-      end
-
-      return
-
-      begin
-        sleep 0.5
-        req = EM::HttpRequest.new(val[:href],:connect_timeout => 5000, :inactivity_timeout => 5000).get
-      rescue => ex
-        p ex
-      end
-
-      req.errback {
-        @fetching -= 1
-
-      }
-
-      req.errback {|client|
-        puts "timeout anitanvideo #{val[:href]}"
-        pp "get error event machine : #{client.inspect}";
-      }
-
-      req.callback do
-        # puts value.inspect
-        page = Nokogiri::HTML(req.response)
-
-        videos = []
-
-        page.css("script").each do |script|
-          next unless script.children[0] && script.children[0].to_s =~ /MukioPlayerURI/
-          lines = script.children[0].to_s.gsub("\n","").split(";")
-          lines.each do |l|
-            next unless l =~ /addVideo/
-            # next unless l =~ /type=fc2/
-            puts l
-            l =~ /type=(.*?)&/
-            type = $1
-            url = getURL type,l
-
-            # puts path + ":" + url if url
-
-            # checksize = checkvideourl url if url
-            # if checksize
-              #downloadvideo url , path , checksize if url
-              if url
-                puts "#" * 20
-                puts "fetch #{url}"
-                puts "#" * 20
-                downloadvideo url , path , 10000
-                fetched = true
-              else
-                puts "#" * 20
-                p val
-                puts "url is false" * 20
-                puts "#" * 20
-              end
-            # end
-
-            if fetched
-              puts "fetched is true"
-              break
-            end
-          end
-        end
       end
     end
     @fetching -= 1
@@ -800,7 +697,7 @@ SQL
 
   def proseed title
     return true
-    if title =~ /終末/
+    if title =~ /冴えない/
       return true
     else
       return false
