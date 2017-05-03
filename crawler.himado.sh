@@ -13,7 +13,7 @@ if [ x"$PID" != x"" ]; then
 fi
 bundle exec ruby -W0 crawler.himado.rb
 
-sleep 100
+sleep 60
 
 ./cleanup.sh
 ./gif.sh
