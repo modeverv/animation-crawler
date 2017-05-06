@@ -42,7 +42,7 @@ class Crawler
   JOB_NOSUBVIDEO     = 'nosubビデオページ'
   JOB_ANITANVIDEO    = 'アニタンビデオページ'
   JOB_CONVERT        = 'flv2mp4'
-  JOB_DOWNLOADVIDEO  = 'download'
+  JOB_DOWNLOADVIDEO = 'download'
 
   DBFILE = 'crawler.db'
 
@@ -325,49 +325,51 @@ class Crawler
       end
       @fetching += 1
 
-      url = false
-      p val[:href]
-
-      begin
-        @session.visit val[:href]
-        begin
-          a = @session.find('video')['src']
-          url = URI.unescape(a)
-        rescue => e1
-          p e1
-        end
-
-        begin
-          if url == false
-            flashvars = @session.find('#playerswf')['flashvars']
-            flashvars =~ /'url='(.*?)' sou/
-            url_bare = Regexp.last_match[1]
-            url = URI.unescape(url_bare)
-          end
-        rescue => e2
-          p e2
-        end
-
-        begin
-          if url == false
-            @session.execute_script '$(\'#movie_title\').attr(\'src\',ary_spare_sources.spare[1].src);'
-            src = @session.find('#movie_title')['src']
-            url = URI.unescape(src)
-          end
-        rescue => e3
-          p e3
-        end
-
-        puts "enqueue #{path}"
-        if url
-          @queue.push(kind: JOB_DOWNLOADVIDEO,
-                      value: { url: url, path: path, low: 10_000 })
-        end
-      rescue => ex
-        pp ex
+      url = get_url(val)
+      puts "enqueue #{path}"
+      if url
+        @queue.push(kind: JOB_DOWNLOADVIDEO,
+                    value: { url: url, path: path, low: 10_000 })
       end
     end
     @fetching -= 1
+  end
+
+  def get_url(val)
+    url = false
+    @session.visit val[:href]
+    begin
+      a = @session.find('video')['src']
+      url = URI.unescape(a)
+    rescue => e1
+      p e1
+    end
+
+    begin
+      if url == false
+        flashvars = @session.find('#playerswf')['flashvars']
+        flashvars =~ /'url='(.*?)' sou/
+        url_bare = Regexp.last_match[1]
+        url = URI.unescape(url_bare)
+      end
+    rescue => e2
+      p e2
+    end
+
+    begin
+      if url == false
+        @session.execute_script '$(\'#movie_title\').attr(\'src\',ary_spare_sources.spare[1].src);'
+        src = @session.find('#movie_title')['src']
+        url = URI.unescape(src)
+      end
+    rescue => e3
+      p e3
+    end
+
+    return url
+  rescue => ex
+    pp ex
+    return false
   end
 
   def downloadvideo(url, path, _size)
@@ -413,7 +415,7 @@ class Crawler
 
   def mkfilepath(title, episode)
     t = title.tr('(', '（').tr(')', '）').tr('.', '').tr(' ', '').tr('/', '')
-    t = t.tr('　', '').delete('#').delete(':', '').delete('：', '')
+    t = t.tr('　', '').delete('#').delete(':').delete('：')
     t = t.tr('！', '!').tr('+', '＋')
     mkdirectory t
     episode = episode.gsub(/\[720p\]/, '').tr('?', '？')
@@ -437,7 +439,7 @@ class Crawler
 
   def proseed(title)
     true if title =~ /./
-    # return true if title =~ /武装/ || title =~ /クラシカ/
+    # return true if title =~ /busou/ || title =~ /kurasika/
     # return false
   end
 end

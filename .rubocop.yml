@@ -1,0 +1,90 @@
+Rails:
+  Enabled: false
+
+Style/PerlBackrefs:
+  AutoCorrect: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Metrics/BlockNesting:
+  Max: 4
+
+Metrics/LineLength:
+  AllowURI: true
+  Enabled: false
+
+Metrics/MethodLength:
+  CountComments: false
+  Max: 200
+
+Metrics/AbcSize:
+  Max: 200
+
+Metrics/BlockNesting:
+  Max: 4
+
+Metrics/ClassLength:
+  CountComments: false
+  Max: 1000
+
+Metrics/CyclomaticComplexity:
+  Max: 30
+
+Metrics/MethodLength:
+  Max: 155
+
+Metrics/ModuleLength:
+  CountComments: false
+  Max: 500
+
+Metrics/PerceivedComplexity:
+  Max: 40
+
+Metrics/ParameterLists:
+  Max: 4
+  CountKeywordArgs: true
+
+Style/AccessModifierIndentation:
+  EnforcedStyle: indent
+
+Style/CollectionMethods:
+  Enabled: true
+  PreferredMethods:
+    find_all: 'select'
+
+Style/Documentation:
+  Enabled: false
+
+Style/DoubleNegation:
+  Enabled: true
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+
+Style/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: space
+
+Style/TrailingCommaInLiteral:
+  EnforcedStyleForMultiline: 'comma'
+
+Style/RegexpLiteral:
+  Enabled: false
+
+Style/Lambda:
+  Enabled: false
+
+Rails/HasAndBelongsToMany:
+  Enabled: false
+
+AllCops:
+  TargetRubyVersion: 2.3
+  Exclude:
+  - 'spec/**/*'
+  - 'db/**/*'
+  - 'app/views/**/*'
+  - 'config/**/*'
+  - 'bin/*'
+  - 'Rakefile'
+  - 'node_modules/**/*'
+  - 'Vagrantfile'
