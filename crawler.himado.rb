@@ -71,17 +71,21 @@ class Crawler
         id integer primary key,
         name text,
         path text,
-        created_at TIMESTAMP DEFAULT (DATETIME('now','localtime'))
+        created_at TIMESTAMP DEFAULT (DATETIME('now','localtime')),
+        url text
       );
     SQL
     @db.execute sql
     @sql = <<~SQL
-      insert into crawler(name,path) values(:name,:path)
+      insert into crawler(name, path, url) values(:name, :path, :url)
     SQL
     @sql_select = <<~SQL
-      select * from crawler where name = :name
+      select * from crawler
     SQL
-
+    @himado = {}
+    @db.execute(@sql_select) do |row|
+      @himado[row[4]] = true
+    end
     Capybara::Webkit.configure do |config|
       config.debug = false
       config.allow_url('*')
@@ -147,7 +151,7 @@ class Crawler
     when JOB_CONVERT
       convert job[:value]
     when JOB_DOWNLOADVIDEO
-      downloadvideo job[:value][:url], job[:value][:path], job[:value][:low]
+      downloadvideo job[:value]
     end
   end
 
@@ -279,10 +283,15 @@ class Crawler
       page = Nokogiri::HTML(req.response)
       count = 2
       page.css(".thumbtitle a[rel='nofollow']").each do |a|
-        break if count.negative?
-        count -= 1
         href = 'http://himado.in'
         href += a.attributes['href'].value unless a.attributes['href'].nil?
+        if @himado[href]
+          puts '*' * 80
+          puts "already fetched #{href} skip"
+          next
+        end
+        break if count.negative?
+        count -= 1
         episode = a.attributes['title'].value.delete('.').delete(' ')
         episode = episode.delete('　').delete('#').delete(':').delete('第')
         episode = episode.delete('話').delete('/')
@@ -329,7 +338,7 @@ class Crawler
       puts "enqueue #{path}"
       if url
         @queue.push(kind: JOB_DOWNLOADVIDEO,
-                    value: { url: url, path: path, low: 10_000 })
+                    value: { url: url, path: path, low: 10_000, orig_url: val[:href] })
       end
     end
     @fetching -= 1
@@ -372,7 +381,12 @@ class Crawler
     return false
   end
 
-  def downloadvideo(url, path, _size)
+  def downloadvideo(val)
+    url = val[:url]
+    path = val[:path]
+    _size = val[:low]
+    orig_url = val[:orig_url]
+
     puts 'downloadvideo : ' + path
 
     return if @downloads[path]
@@ -399,10 +413,12 @@ class Crawler
         puts command
         system command
         @fetching -= 1
-        @db.execute(@sql, name: (File.basename path2), path: path2)
+        puts "#" * 80
+        puts "orig_url: #{orig_url}"
+        @db.execute(@sql, name: (File.basename path2), path: path2, url: orig_url)
       else
         command = "curl -# -L -R -o '#{path}' '#{url}' &"
-        @db.execute(@sql, name: (File.basename path2), path: path2)
+        @db.execute(@sql, name: (File.basename path2), path: path2, url: orig_url)
         puts command
         system command
         @fetching -= 1
@@ -439,7 +455,7 @@ class Crawler
 
   def proseed(title)
     true if title =~ /./
-    # return true if title =~ /busou/ || title =~ /kurasika/
+    # return true if title =~ /CREAT/ || title =~ /kurasika/
     # return false
   end
 end
