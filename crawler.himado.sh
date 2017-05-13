@@ -7,11 +7,13 @@ export PATH="/home/seijiro/.rvm/bin:$PATH" # Add RVM to PATH for scripting
 source /home/seijiro/.rvm/environments/ruby-2.3.0
 ruby -v
 cd /home/seijiro/crawler
-PID=`ps x | grep -v grep | grep "crawler.himado.rb" | awk '{ print $1 }'`
+PID=`ps x | grep "crawler.himado.rb"| grep -v grep | awk '{ print $1 }'`
+echo $PID
 if [ x"$PID" != x"" ]; then
     kill -9 $PID
 fi
-bundle exec ruby -W0 crawler.himado.rb
+
+time bundle exec ruby -W0 crawler.himado.rb
 
 sleep 60
 

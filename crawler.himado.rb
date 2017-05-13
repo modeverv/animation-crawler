@@ -14,9 +14,9 @@ require 'mechanize'
 require 'net/http'
 require 'logger'
 require 'sqlite3'
-require 'capybara/poltergeist'
 require 'capybara/webkit'
 require 'headless'
+require 'parallel'
 
 # crawler
 class Crawler
@@ -65,7 +65,6 @@ class Crawler
     @titles = {}
     @downloads = {}
     @urls = {}
-    @db = SQLite3::Database.new(DBFILE)
     sql = <<~SQL
       CREATE TABLE IF NOT EXISTS crawler(
         id integer primary key,
@@ -75,16 +74,21 @@ class Crawler
         url text
       );
     SQL
-    @db.execute sql
+    open_db do |db|
+      db.execute sql
+    end
+
     @sql = <<~SQL
       insert into crawler(name, path, url) values(:name, :path, :url)
     SQL
-    @sql_select = <<~SQL
+    sql_select = <<~SQL
       select * from crawler
     SQL
     @himado = {}
-    @db.execute(@sql_select) do |row|
-      @himado[row[4]] = true
+    open_db do |db|
+      db.execute(sql_select) do |row|
+        @himado[row[4]] = true
+      end
     end
     Capybara::Webkit.configure do |config|
       config.debug = false
@@ -100,15 +104,21 @@ class Crawler
     )
   end
 
+  def open_db
+    db = SQLite3::Database.new(DBFILE)
+    yield(db)
+    db.close
+  end
+
   def run
     EM.run do
       EM.add_periodic_timer(WATCH_INTERVAL) do
         diff = CONCURRENCY - @fetching
 
         diff.times do
+          print "queue - #{@queue.size}\t"
           job = @queue.pop
-          break unless job
-          process job
+          process job if job
         end
 
         if @queue.size.zero?
@@ -118,7 +128,6 @@ class Crawler
             puts :finish
             pp @downloads
             EM.stop_event_loop
-            @db.close
           end
         else
           @gaman = @_gaman
@@ -413,12 +422,16 @@ class Crawler
         puts command
         system command
         @fetching -= 1
-        puts "#" * 80
+        puts '#' * 80
         puts "orig_url: #{orig_url}"
-        @db.execute(@sql, name: (File.basename path2), path: path2, url: orig_url)
+        open_db do |db|
+          db.execute(@sql, name: (File.basename path2), path: path2, url: orig_url)
+        end
       else
         command = "curl -# -L -R -o '#{path}' '#{url}' &"
-        @db.execute(@sql, name: (File.basename path2), path: path2, url: orig_url)
+        open_db do |db|
+          db.execute(@sql, name: (File.basename path2), path: path2, url: orig_url)
+        end
         puts command
         system command
         @fetching -= 1

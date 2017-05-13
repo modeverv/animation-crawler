@@ -55,7 +55,6 @@ class Crawler
     @titles = {}
     @downloads = {}
     @urls = {}
-    @db = SQLite3::Database.new(DBFILE)
     sql = <<-SQL
 CREATE TABLE IF NOT EXISTS crawler(
   id integer primary key,
@@ -64,13 +63,21 @@ CREATE TABLE IF NOT EXISTS crawler(
   created_at TIMESTAMP DEFAULT (DATETIME('now','localtime'))
 );
 SQL
-    @db.execute sql
+    open_db do |db|
+      db.execute sql
+    end
     @sql = <<-SQL
 insert into crawler(name,path) values(:name,:path)
 SQL
     @sql_select = <<-SQL
 select * from crawler where name = :name
 SQL
+  end
+
+  def open_db
+    db = SQLite3::Database.new(DBFILE)
+    yield(db)
+    db.close
   end
 
   def run
@@ -95,7 +102,6 @@ SQL
             puts "finish"
             pp @downloads
             EM::stop_event_loop
-            @db.close
           end
         else
           # pp @queue
@@ -659,14 +665,18 @@ SQL
           @fetching -= 1
           # result = @db.execute(@sql_select,:name => (File.basename path2))
           # if resule.size == 0
-            @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          open_db do |db|
+            db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          end
           # end
           @downloads[path] = "complete"
         else
           command = "curl -# -L -R -o '#{path}' '#{url}' &"
           # result = @db.execute(@sql_select,:name => (File.basename path2))
           # if resule.size == 0
-            @db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          open_db do |db|
+            db.execute(@sql,:name => (File.basename path2) ,:path => path2 )
+          end
           # end
           puts command
           system command
@@ -775,4 +785,3 @@ end
 # 最近のflvは中身をそのままで外装を変換するだけなのでコンバートまでしてしまう。
 # Crawler.new(ffmpeg: false,debug: false,usecurl: true).run
 Crawler.new(ffmpeg: true,debug: true,usecurl: true).run
-
