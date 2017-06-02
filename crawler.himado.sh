@@ -19,3 +19,8 @@ sleep 60
 
 ./cleanup.sh
 ./gif.sh
+
+kill -9 `ps -ef | grep webkit_server | grep -v grep | awk '{ print $2 }'`
+ps aux | grep webkit | grep -v grep
+echo `date`
+echo "###END###"

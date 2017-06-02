@@ -77,4 +77,3 @@ end
 filelist.sort_by { |f| File::mtime(f) }.each { |f|
    insert f unless exists? f
 }
-

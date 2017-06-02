@@ -116,7 +116,7 @@ class Crawler
         diff = CONCURRENCY - @fetching
 
         diff.times do
-          print "queue - #{@queue.size}\t"
+          # print "queue - #{@queue.size}\t"
           job = @queue.pop
           process job if job
         end
@@ -245,24 +245,25 @@ class Crawler
 
     req.callback do
       page = Nokogiri::HTML(req.response)
-      return if page.title.nil?
-      t = page.title.delete(' ★ You Tube アニ速 ★').strip
-      t = t.delete('.').delete(' ').delete('/').delete('#')
-      t = t.delete('(').delete(')')
+      unless page.title.nil?
+        t = page.title.delete(' ★ You Tube アニ速 ★').strip
+        t = t.delete('.').delete(' ').delete('/').delete('#')
+        t = t.delete('(').delete(')')
 
-      value[:title] = t if t
+        value[:title] = t if t
 
-      page.css('a').each do |a|
-        href = ''
-        href = a.attributes['href'].value unless a.attributes['href'].nil?
-        next unless href =~ %r{himado\.in\/\?s}
-        next unless a.children[0].text =~ /ひまわり/
-        next if @titles[value[:title]]
-        @titles[value[:title]] = :pedinding
-        @queue.push(
-          kind: JOB_ANITANSEARCH,
-          value: { title: value[:title], href: href }
-        )
+        page.css('a').each do |a|
+          href = ''
+          href = a.attributes['href'].value unless a.attributes['href'].nil?
+          next unless href =~ %r{himado\.in\/\?s}
+          next unless a.children[0].text =~ /ひまわり/
+          next if @titles[value[:title]]
+          @titles[value[:title]] = :pedinding
+          @queue.push(
+            kind: JOB_ANITANSEARCH,
+            value: { title: value[:title], href: href }
+          )
+        end
       end
       @fetching -= 1
     end
@@ -467,9 +468,9 @@ class Crawler
   end
 
   def proseed(title)
-    true if title =~ /./
+    return true if title =~ /./
+    # return true
     # return true if title =~ /CREAT/ || title =~ /kurasika/
-    # return false
   end
 end
 

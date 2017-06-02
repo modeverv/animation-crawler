@@ -21,7 +21,7 @@ def create_gif path
     #  system command_3
     #  system command_4
     command_ffmpeg = "ffmpeg -n -ss 0 -i '#{path}' -t 10 -an -r 1 -s 160x90 -pix_fmt rgb24 -f gif '#{giffilename}'  "
-    system command_ffmpeg 
+    system command_ffmpeg
   rescue => ex
     p ex
   end

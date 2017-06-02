@@ -773,7 +773,7 @@ SQL
 
   def proseed title
     return true
-    if title =~ /魔法の書/
+    if title =~ /クロック/
       return true
     else
       return false
