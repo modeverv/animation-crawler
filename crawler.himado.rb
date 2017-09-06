@@ -291,8 +291,9 @@ class Crawler
 
     req.callback do
       page = Nokogiri::HTML(req.response)
-      count = 2
-      page.css(".thumbtitle a[rel='nofollow']").each do |a|
+      count = 5
+      #page.css(".thumbtitle a[rel='nofollow']").each do |a|
+      page.css(".thumbtitle a").each do |a|
         href = 'http://himado.in'
         href += a.attributes['href'].value unless a.attributes['href'].nil?
         if @himado[href]

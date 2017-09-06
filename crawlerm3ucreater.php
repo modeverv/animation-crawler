@@ -1,5 +1,5 @@
 <?php
-error_reporting(0);
+error_reporting(E_ALL);
 setlocale(LC_ALL, "ja_JP.utf8");
 
 /* disable file base basic auth
@@ -107,6 +107,7 @@ function sendM3u(){
  */
 function convertPath($path){
     $p = str_replace(" ","%20",$path);
+    //$p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@lovesaemi.daemon.asia/",$p);
     $p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@lovesaemi.daemon.asia/",$p);
     $p = str_replace("/var/smb/sdb1/video","https://seijiro:fuga@lovesaemi.daemon.asia/video2",$p);
     return $p;
@@ -141,7 +142,7 @@ function convertGif($path){
     $gif = str_replace("mkv","gif",$gif);
     $gif = str_replace("rmvb","gif",$gif);
     $p = str_replace(" ","%20",$gif);
-    $p = "//seijiro:fuga@lovesaemi.daemon.asia/video/gif/" . $p;
+    $p = "//lovesaemi.daemon.asia/video/gif/" . $p;
     return $p;
 }
 
@@ -207,10 +208,24 @@ function normal(){
 function find(){
     global $info;
     if(isset($_REQUEST["search"]) && $_REQUEST["search"] != ""){
+        $search_str_ar = mb_split(" ", $_REQUEST["search"]);
         $pdo = getDB();
-        $sql = "select * from crawler where path like :path order by name,id desc";
+        $sql_select = "select * from crawler where ";
+        $sql_where_a = array();
+        $count = 0;
+        $sql_cond = array();
+        foreach($search_str_ar as $s){
+            $sql_where_a[] = " path like :path" . $count . " ";
+            $sql_cond[":path" . $count] = "%" . trim($s) . "%";
+            $count++;
+        }
+        $sql_order = " order by name,id desc";
+        $sql = $sql_select . implode(" AND ", $sql_where_a) . $sql_order;
+        //var_dump($sql);
+        //var_dump($sql_cond);
+        //exit();
         $stmt = $pdo->prepare($sql);
-        $stmt->execute(array(":path" => "%".trim($_REQUEST["search"])."%"));
+        $stmt->execute($sql_cond);
         $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
      }else{
         normal();
@@ -646,7 +661,7 @@ function resizer(){
     $("#video-area").css("height",$(window).height());
     $("#video-frame").css("width",$(window).width());
     $("#video-frame").css("height",$(window).height() - 20);
-}    
+}
 
 // init
 $(function(){
@@ -666,9 +681,9 @@ $(function(){
      if(confirm("閉じてもよろしいですか？")){
        $('#video-area').toggle();
        $('#video-frame').attr('src','');
-     }  
+     }
    });
-});   
+});
 </script>
 <script type="text/template" id="my-template">
   <tr>
@@ -687,8 +702,8 @@ $(function(){
 <body>
 <div id="video-area">
   <div id="video-button-area"><button class="btn btn-primary" type="button" id="btn-videoclose">X</button></div>
-  <iframe id="video-frame"></iframe> 
-</div>                           
+  <iframe id="video-frame"></iframe>
+</div>
 <form method="GET">
 <nav id="control" class="navbar navbar-fixed-top" role="navigation">
 <div class="container">
