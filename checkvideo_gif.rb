@@ -3,7 +3,7 @@
 
 require 'sqlite3'
 
-SQLITEFILE = "/home/seijiro/crawler/crawler.db"
+SQLITEFILE = "/var/www/php/animation-crawler/crawler.db"
 
 # @see http://takuya-1st.hatenablog.jp/entry/2015/07/15/002701
 def create_gif path
@@ -42,7 +42,7 @@ def mkgifpath path
   # command = "rm -f '#{gifpath}' "
   # puts command
   # system command
-  return "/var/smb/sdc1/video/gif/" + filename
+  return "/var/smb/sdd1/gif/" + filename
 end
 
 def get_list

@@ -1,8 +1,9 @@
 #! /bin/env ruby
+# coding: utf-8
 
 require 'sqlite3'
 
-SQLITEFILE = "/home/seijiro/crawler/crawler.db"
+SQLITEFILE = "/var/www/php/animation-crawler/crawler.db"
 
 def create_db
   sql =<<-SQL
@@ -29,6 +30,7 @@ SQL
 end
 
 def exists? path
+  print "select #{path}\t"
   sql =<<-SQL
 select * from crawler where path like :path
 SQL
@@ -52,22 +54,22 @@ create_db
 filelist = []
 
 pathlist = [
-            "/var/smb/sdb1/video/**/*.m4v",
-            "/var/smb/sdc1/video/**/*.m4v",
-            "/var/smb/sdb1/video/**/*.MOV",
-            "/var/smb/sdc1/video/**/*.MOV",
-            "/var/smb/sdc1/video/**/*.mp4",
-            "/var/smb/sdc1/video/**/*.flv",
-            "/var/smb/sdb1/video/**/*.rmvb",
-            "/var/smb/sdb1/video/**/*.avi",
-            "/var/smb/sdc1/video/**/*.mkv",
-            "/var/smb/sdb1/video/**/*.mkv",
-            "/var/smb/sdb1/video/**/*.mp4",
-            "/var/smb/sdb1/video/**/*.flv",
-            "/var/smb/sdb1/video/**/*.avi",
-            "/var/smb/sdc1/video/**/*.avi",            
-            "/var/smb/sdb1/video/**/*.wmv",
-            "/var/smb/sdc1/video/**/*.wmv",            
+            "/var/smb/sdd1/video/**/*.m4v",
+            "/var/smb/sdd1/video/**/*.MOV",
+            "/var/smb/sdd1/video/**/*.mp4",
+            "/var/smb/sdd1/video/**/*.flv",
+            "/var/smb/sdd1/video/**/*.wmv",
+            "/var/smb/sdd1/video/**/*.mkv",
+            "/var/smb/sdd1/video/**/*.avi",
+            
+#            "/var/smb/sdb1/video/**/*.rmvb",
+#            "/var/smb/sdb1/video/**/*.avi",
+#            "/var/smb/sdb1/video/**/*.mkv",
+#            "/var/smb/sdb1/video/**/*.mp4",
+#            "/var/smb/sdb1/video/**/*.flv",
+#            "/var/smb/sdb1/video/**/*.avi",
+#            "/var/smb/sdb1/video/**/*.wmv",
+
            ]
 
 pathlist.each do |path|
@@ -75,5 +77,5 @@ pathlist.each do |path|
 end
 
 filelist.sort_by { |f| File::mtime(f) }.each { |f|
-   insert f unless exists? f
+  insert f unless exists? f
 }

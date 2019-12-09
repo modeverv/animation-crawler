@@ -76,11 +76,13 @@ function sendM3u(){
     if(count($ids) == 0){
        return normal();
     }
+    //echo "bbb";exit();
     $pdo = getDB();
     $sql = "select * from crawler where id = :id ";
     $stmt = $pdo->prepare($sql);
     $filename = "crawler.m3u";
-    $fh = fopen($filename,"w");
+    $filename2 = "/tmp/crawler.m3u";
+    $fh = fopen($filename2,"w");
     fwrite($fh,"#EXTM3U\n");
     foreach($ids as $id){
         $stmt->execute(array(":id" => $id));
@@ -91,13 +93,13 @@ function sendM3u(){
         }else{
             $row["url"] = convertPath($row["path"]);
         }
-        formatAndWrite($fh,$row);
+        formatAndWrite($fh, $row);
     }
     fclose($fh);
     header('Content-Type:application/octet-stream');
     header('Content-Disposition:filename=playlist.m3u');
-    header('Content-Length:' . filesize($filename));
-    readfile($filename);
+    header('Content-Length:' . filesize($filename2));
+    readfile($filename2);
     //unlink($filename);
     exit;
 }
@@ -107,9 +109,9 @@ function sendM3u(){
  */
 function convertPath($path){
     $p = str_replace(" ","%20",$path);
-    //$p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@lovesaemi.daemon.asia/",$p);
-    $p = str_replace("/var/smb/sdc1/","https://seijiro:fuga@lovesaemi.daemon.asia/",$p);
-    $p = str_replace("/var/smb/sdb1/video","https://seijiro:fuga@lovesaemi.daemon.asia/video2",$p);
+    $p = str_replace("/var/smb/sdb1/video","https://seijiro:hoge@lovesaemi.daemon.asia/video/sdb1", $p);
+    $p = str_replace("/var/smb/sdc1/video","https://seijiro:hoge@lovesaemi.daemon.asia/video/sdc1", $p);
+    $p = str_replace("/var/smb/sdd1/video","https://seijiro:hoge@lovesaemi.daemon.asia/video/sdd1", $p);        
     return $p;
 }
 
@@ -117,7 +119,7 @@ function convertPath($path){
  * convert filepath to smb filepath
  */
 function convertPathSMB($path){
-    $p = str_replace("/var","/Volumes",$path);
+    $p = str_replace("/var/smb","/Volumes/smb",$path);
     return $p;
 }
 
@@ -142,7 +144,7 @@ function convertGif($path){
     $gif = str_replace("mkv","gif",$gif);
     $gif = str_replace("rmvb","gif",$gif);
     $p = str_replace(" ","%20",$gif);
-    $p = "//lovesaemi.daemon.asia/video/gif/" . $p;
+    $p = "//lovesaemi.daemon.asia/gif/" . $p;
     return $p;
 }
 
@@ -159,7 +161,7 @@ function formatAndWrite($fh,$row){
  * get DB connection(PDO)
  */
 function getDB(){
-    $dsn = 'sqlite:/home/seijiro/crawler/crawler.db';
+    $dsn = 'sqlite:/var/www/php/animation-crawler/crawler.db';
     $user = '';
     $pass = '';
 
@@ -258,24 +260,24 @@ function makeSearchLink($dirname){
     $name = basename($dirname);
     $name = htmlspecialchars($name);
     $time = date("Y-m-d",filemtime($dirname));
-    return "<a href=\"anime.php?submit=search&search=". $dirname . "\">" . $name . " - " . $time . "</a>";
+    return "<a href=\"index.php?submit=search&search=". $name . "\">" . $name . " - " . $time . "</a>";
 }
 /**
  * glob video directory
  */
 function videoglob(){
     global $dirs;
-    foreach(glob("/var/smb/sdb1/video/*") as $entry){
-        $dirs[] = $entry;
-    }
-    foreach(glob("/var/smb/sdc1/video/*") as $entry){
-        if($entry == "/var/smb/sdc1/video/gif"){
+#    foreach(glob("/var/smb/sdd1/video/*") as $entry){
+#        $dirs[] = $entry;
+#    }
+    foreach(glob("/var/smb/sdd1/video/*") as $entry){
+        if($entry == "/var/smb/sdd1/video/gif"){
             continue;
         }
-        if($entry == "/var/smb/sdc1/video/0m3u"){
+        if($entry == "/var/smb/sdd1/video/0m3u"){
             continue;
         }
-        if($entry == "/var/smb/sdc1/video/0log"){
+        if($entry == "/var/smb/sdd1/video/0log"){
             continue;
         }
         $dirs[] = $entry;
@@ -695,7 +697,7 @@ $(function(){
          {name}
     </td>
     <td onclick="prop(this)" data-value="chk{id}">{created_at}</td>
-    <td><a class="view-video" href="https://lovesaemi.daemon.asia/play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a class="view-video" href="https://anm.lovesaemi.daemon.asia/play.php?src={url}" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 </script>
 </head>
@@ -716,11 +718,11 @@ $(function(){
 <div class="row">
   <!-- <button class="btn btn-primary" type="button" onclick="reload();return false;">reload</button> -->
   <!-- <button class="btn btn-primary" type="button" onclick="uncheck();return false;">uncheck all</button>-->
-  <button class="btn btn-primary" type="button" onclick="location.href = 'anime.php';">reset</button>
+  <button class="btn btn-primary" type="button" onclick="location.href = 'index.php';">reset</button>
   <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
   <label for="deliverymode">mode</label>
-  <label><input type="radio" name="deliverymode" value="http"/>http</label>
+  <label><input type="radio" name="deliverymode" value="http" />http</label>
   <label><input type="radio" name="deliverymode" value="smb" checked/>smb</label>
 </div>
 </div>
@@ -751,14 +753,14 @@ $(function(){
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><input class="chk" id="chk<?php echo $row['id']?>" type="checkbox" name="ids[]" value="<?php echo $row['id']?>"/></td>
     <td class="left break" onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php if(! isSmartPhone() ){ ?><img data-original="<?php echo $row['gif'] ?>" srcc="<?php echo $row['gif'] ?>" alt="gif" class="lazy" style="width:160px;height:90px"/><br/><?php } ?><?php echo $row["name"] ?></td>
     <td onclick="prop(this)" data-value="chk<?php echo $row['id']?>"><?php echo $row["created_at"] ?></td>
-    <td><a class="view-video" href="https://lovesaemi.daemon.asia/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
+    <td><a class="view-video" href="https://anm.lovesaemi.daemon.asia/play.php?src=<?php echo $row['url'] ?>" target="_blank"><img src="video.png" style="width:40px;height:40px;"/></a></td>
   </tr>
 <?php }?>
   </tbody>
 </table>
 <?php if( !(isset($_REQUEST["search"]) && $_REQUEST["search"] != "") ) { ?>
 <div style="display:block;margin-bottom:100px;text-align:center;">
-  <a href="javascript:void(0);"><h2 class="" type="button" id="more">more</h2></a>
+  <a href="javascript:void(0);"><h2 class="" style="display:none" type="button" id="more">more</h2></a>
 </div>
 <?php } ?>
 </div>
