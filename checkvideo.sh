@@ -12,5 +12,5 @@ PID=`ps x | grep -v grep | grep "checkvideo.rb" | awk '{ print $1 }'`
 if [ x"$PID" != x"" ]; then
     kill -9 $PID
 fi
-bundle exec ruby -W0 checkvideo.rb
-bundle exec ruby -W0 checkvideo_gif.rb
+/home/seijiro/.rbenv/shims/bundle exec ruby -W0 checkvideo.rb
+/home/seijiro/.rbenv/shims/bundle exec ruby -W0 checkvideo_gif.rb

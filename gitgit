@@ -1,0 +1,29 @@
+#! /bin/bash
+USERNAME=modeverv
+cd `dirname $0`
+function git_init() {
+  git init
+  REPONAME=$1
+  if [ -z "$REPONAME" ]; then
+    REPONAME=`date +"%Y%m%d%H%M%S"`
+  fi
+  echo $REPONAME
+  hub create ${REPONAME}
+}
+function git_commit_push() {
+  MESSAGE=$1
+  if [ -z "$MESSAGE" ]; then
+    MESSAGE=`date +"%Y-%m-%d %H:%M:%S"`
+  fi
+  git add .
+  git commit -m "$MESSAGE"
+  git push --all
+}
+if git rev-parse --git-dir > /dev/null 2>&1; then
+  git_commit_push $1;
+else
+  git_init $1;
+  git_commit_push $2;
+fi
+#hub browse
+

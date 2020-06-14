@@ -41,6 +41,7 @@ function dispatch(){
 }
 
 function getFileSize($filepath){
+   //var_dump(filesize($filepath));exit();
    return round(filesize($filepath) / pow(1024, 2));
 }
 
@@ -182,12 +183,15 @@ function convertRows($rows){
     $info = array();
     foreach($rows as $row){
         $filesize = getFileSize($row["path"]);
-        if($filesize > 0){
+        //var_dump($filesize);
+        //var_dump($row);exit(); 
+        // なんでfilesizeが0より大きいという制限を入れたのか記憶にないよ       
+        //if($filesize > 0){
             $row["name"] = $row["name"] . " - " . $filesize . "MB";
             $row["url"] = convertPath($row["path"]);
             $row["gif"] = convertGif($row["path"]);
             $info[] = $row;
-        }
+        //}
     }
     return $info;
 }
@@ -228,6 +232,7 @@ function find(){
         //exit();
         $stmt = $pdo->prepare($sql);
         $stmt->execute($sql_cond);
+        //echo("<pre>");var_dump($stmt->fetchAll(PDO::FETCH_ASSOC));exit();
         $info = convertRows($stmt->fetchAll(PDO::FETCH_ASSOC));
      }else{
         normal();
@@ -267,9 +272,9 @@ function makeSearchLink($dirname){
  */
 function videoglob(){
     global $dirs;
-#    foreach(glob("/var/smb/sdd1/video/*") as $entry){
-#        $dirs[] = $entry;
-#    }
+    #    foreach(glob("/var/smb/sdd1/video/*") as $entry){
+    #        $dirs[] = $entry;
+    #    }
     foreach(glob("/var/smb/sdd1/video/*") as $entry){
         if($entry == "/var/smb/sdd1/video/gif"){
             continue;
@@ -289,10 +294,9 @@ function videoglob(){
         }
         return (filemtime($a) < filemtime($b)) ? 1 : -1;
     }
-    usort($dirs,'compare');
+        usort($dirs,'compare');
 }
-?>
-<!DOCTYPE html>
+?><!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -301,7 +305,7 @@ function videoglob(){
 <title>crawler m3u creater</title>
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
-<link rel="apple-touch-icon" href="favicon.ico" />
+<link rel="shortcut icon" href="favicon.ico">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <style>
 .break { word-break:break-all; }
@@ -654,6 +658,7 @@ function viewVideo(){
     var href = $this.attr("href");
     console.log(href);
     $("#video-frame").attr("src",href);
+    $("#video-frame").attr("type","video/webm");    
     $("#video-area").show();
     return false;
 }
