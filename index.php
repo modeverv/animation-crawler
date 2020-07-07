@@ -727,8 +727,8 @@ $(function(){
   <button class="btn btn-primary" type="button" onclick="$('#dirs').toggle();">dirs</button>
   <input class="btn btn-warning" type="submit" name="submit" value="m3u"/>
   <label for="deliverymode">mode</label>
-  <label><input type="radio" name="deliverymode" value="http" />http</label>
-  <label><input type="radio" name="deliverymode" value="smb" checked/>smb</label>
+  <label><input type="radio" name="deliverymode" value="http" checked />http</label>
+  <label><input type="radio" name="deliverymode" value="smb" />smb</label>
 </div>
 </div>
 </nav>

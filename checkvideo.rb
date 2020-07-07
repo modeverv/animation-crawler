@@ -47,6 +47,26 @@ def my_glob filelist, path
   filelist
 end
 
+def select_all_and_delete_no_data
+  sql =<<-SQL
+select * from crawler
+SQL
+  db = SQLite3::Database.new(SQLITEFILE)
+  result = db.execute sql
+
+  sql_delete = <<-SQL
+delete from crawler where id = :id
+SQL
+  #p result
+  result.each do |row|
+    if ! File.exists? row[2]
+      print "delete - #{row[2]}"
+      db.execute sql_delete, {:id => row[0] }
+    end
+  end
+  db.close
+end
+
 #---------------
 # main
 create_db
@@ -61,7 +81,7 @@ pathlist = [
             "/var/smb/sdd1/video/**/*.wmv",
             "/var/smb/sdd1/video/**/*.mkv",
             "/var/smb/sdd1/video/**/*.avi",
-            
+
 #            "/var/smb/sdb1/video/**/*.rmvb",
 #            "/var/smb/sdb1/video/**/*.avi",
 #            "/var/smb/sdb1/video/**/*.mkv",
@@ -79,3 +99,5 @@ end
 filelist.sort_by { |f| File::mtime(f) }.each { |f|
   insert f unless exists? f
 }
+
+select_all_and_delete_no_data
